@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CBMPE Contato</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <link rel="stylesheet" href="style/style.css" />
+  <meta name="theme-color" content="#0b5f8a">
+</head>
+
+<body>
+ <!-- HEADER PADRONIZADO -->
+  <header class="header" role="banner">
+    <div class="brand" aria-label="CBMPE">
+      <img class="logo" src="icons/logo.jpg" alt="CBMPE logo">
+      <div>
+        <div style="font-weight:900">CBMPE</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.9)">Corpo de Bombeiros Militar - Pernambuco</div>
+      </div>
+    </div>
+
+    <nav class="nav" role="navigation" aria-label="Menu principal">
+      <a href="index.html">Início</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="app.html">Ocorrências</a>
+      <a href="contato.html">Contato</a>
+      <a href="ajuda.html">Ajuda</a>
+    </nav>
+
+    <div class="actions" role="region" aria-label="Ações rápidas">
+      <a class="btn secondary" href="perfil.html">Perfil</a>
+      <a class="btn primary" href="admin.html">Login</a>
+      <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="mobileMenu">☰</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="contact-wrapper">
+      <h2>Fale conosco</h2>
+      <p class="muted">Envie sua mensagem para a central do CBMPE. Em breve o backend estará integrado por enquanto salvamos localmente.</p>
+
+      <div class="contact-row">
+        <div class="left">
+          <label>
+            <div class="input-icon">
+              <i class="fa-solid fa-user" style="color:#0b5f8a"></i>
+              <input id="ctNome" type="text" placeholder="Nome completo" style="border:0;background:transparent;flex:1" />
+            </div>
+          </label>
+
+          <label style="margin-top:12px">
+            <div class="input-icon">
+              <i class="fa-solid fa-envelope" style="color:#ff6f00"></i>
+              <input id="ctEmail" type="email" placeholder="E-mail para contato" style="border:0;background:transparent;flex:1" />
+            </div>
+          </label>
+
+          <label style="margin-top:12px">
+            <div class="input-icon" style="align-items:flex-start;padding-top:12px">
+              <i class="fa-solid fa-comment" style="color:#1ca66b;margin-top:6px"></i>
+              <textarea id="ctMsg" placeholder="Sua mensagem" style="border:0;background:transparent;flex:1;min-height:120px"></textarea>
+            </div>
+          </label>
+
+          <div style="margin-top:12px;display:flex;gap:10px">
+            <button id="btnSend" class="btn action"><i class="fa-solid fa-paper-plane" style="color:#fff"></i> Enviar mensagem</button>
+            <button id="btnClear" class="btn secondary">Limpar</button>
+          </div>
+
+          <div id="ctSuccess" class="success-box">Mensagem enviada com sucesso! (salva localmente)</div>
+        </div>
+
+        <div class="right">
+          <div style="background:#f8fbff;padding:12px;border-radius:8px;border:1px solid #e6eef3">
+            <h4 style="margin:0 0 8px 0;color:#0b5f8a">Unidade Central</h4>
+            <p class="small-muted" style="margin:0">Endereço: Av. Exemplo, Recife - PE</p>
+            <p class="small-muted" style="margin:6px 0 0 0">Telefone: (81) 3344-5566</p>
+            <p class="small-muted" style="margin:6px 0 0 0">E-mail: contato@cbm.pe.gov.br</p>
+          </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© CBMPE Corpo de Bombeiros Militar de Pernambuco</footer>
+
+</body>
+</html>

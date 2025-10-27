@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CBMPE Login de Agente</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="stylesheet" href="style/style.css" />
+  <link rel="stylesheet" href="style/admin.css" />
+  <meta name="theme-color" content="#0b5f8a">
+ 
+</head>
+<body>
+
+  <div class="login-card">
+    <img src="icons/logo.jpg" alt="CBMPE Logo">
+    <h1>Acesso Restrito</h1>
+    <small>Painel de Gestão de Ocorrências</small>
+
+    <form id="loginForm" class="form-vertical">
+      <label for="adminUser">Usuário (E-mail)</label>
+      <input id="adminUser" type="email" placeholder="Digite seu e-mail" required />
+
+      <label for="adminPass">Senha</label>
+      <input id="adminPass" type="password" placeholder="Digite sua senha" required />
+
+      <button type="submit" class="btn-login">ENTRAR</button>
+      
+      <a href="perfil.html" class="link">Não tenho cadastro / Editar Perfil</a>
+      <a href="index.html" class="link" style="margin-top:5px;">Voltar ao início</a>
+    </form>
+  </div>
+
+  <script src="script/shared.js"></script> 
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('loginForm');
+      
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const userEmail = document.getElementById('adminUser').value.trim();
+        const userPass = document.getElementById('adminPass').value.trim();
+        const PROFILE_KEY = 'cbmpe_user_profile';
+
+        // Busca o perfil salvo no localStorage
+        const storedProfile = JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
+
+        // Verifica se o perfil existe e se as credenciais correspondem
+        if (storedProfile && storedProfile.email === userEmail && storedProfile.senha === userPass) {
+          // Salva o estado de "logado" na sessionStorage (se fecha o navegador, desloga)
+          sessionStorage.setItem('cbmpe_admin_logged_in', 'true');
+          
+          showCustomAlert('Login bem-sucedido. Redirecionando para o painel...', 'success');
+          
+          // Redireciona para o painel após um breve intervalo
+          setTimeout(() => {
+            window.location.assign('painel.html');
+          }, 1500);
+
+        } else {
+          showCustomAlert('Usuário ou senha inválidos. Verifique suas credenciais ou crie um perfil.', 'error');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

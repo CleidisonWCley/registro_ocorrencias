@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>CBMPE Serviços</title>
+  <link rel="stylesheet" href="style/style.css"/>
+  <link rel="icon" href="icons/favicon-32x32.png"/>
+</head>
+<body>
+  <!-- HEADER PADRONIZADO -->
+  <header class="header" role="banner">
+    <div class="brand" aria-label="CBMPE">
+      <img class="logo" src="icons/logo.jpg" alt="CBMPE logo">
+      <div>
+        <div style="font-weight:900">CBMPE</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.9)">Corpo de Bombeiros Militar - Pernambuco</div>
+      </div>
+    </div>
+
+    <nav class="nav" role="navigation" aria-label="Menu principal">
+      <a href="index.html">Início</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="app.html">Ocorrências</a>
+      <a href="contato.html">Contato</a>
+      <a href="ajuda.html">Ajuda</a>
+    </nav>
+
+    <div class="actions" role="region" aria-label="Ações rápidas">
+      <a class="btn secondary" href="perfil.html">Perfil</a>
+      <a class="btn primary" href="admin.html">Login</a>
+      <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="mobileMenu">☰</button>
+    </div>
+  </header>
+  <div id="mobileMenu" class="mobile-menu" style="display:none"></div>
+
+  <main class="container">
+    <section class="card">
+      <h2 class="section">Serviços Oferecidos</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px">
+        <div class="card">
+          <h3>Resposta a Incêndios</h3>
+          <p>Atuação rápida em áreas residenciais, comerciais e florestais.</p>
+        </div>
+        <div class="card">
+          <h3>Atendimento a Acidentes</h3>
+          <p>Primeiro atendimento, resgate e coordenação com serviços de saúde.</p>
+        </div>
+        <div class="card">
+          <h3>Resgates Especiais</h3>
+          <p>Operações em altura, em água e em espaços confinados.</p>
+        </div>
+        <div class="card">
+          <h3>Prevenção e Educação</h3>
+          <p>Campanhas e treinamentos para sociedade e instituições.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© CBMPE  Corpo de Bombeiros Militar de Pernambuco</footer>
+
+  <script>
+    function toggleMobile(){ const mm=document.getElementById('mobileMenu'); mm.style.display = mm.style.display === 'block' ? 'none' : 'block'; mm.innerHTML = document.querySelector('.nav').innerHTML; }
+  </script>
+</body>
+</html>

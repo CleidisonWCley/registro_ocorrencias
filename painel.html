@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CBMPE Painel Administrativo</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+
+  <link rel="stylesheet" href="style/style.css">
+  <link rel="stylesheet" href="style/institucional-extend.css">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <meta name="theme-color" content="#0b5f8a" />
+</head>
+<body>
+  <header class="header" role="banner">
+    <div class="brand" aria-label="CBMPE">
+      <img class="logo" src="icons/logo.jpg" alt="CBMPE logo">
+      <div>
+        <div style="font-weight:900">CBMPE</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.9)">Painel de Gestão Administrativo</div>
+      </div>
+    </div>
+    <nav class="nav" role="navigation" aria-label="Menu principal">
+      <a href="index.html">Início</a><a href="servicos.html">Serviços</a><a href="app.html">Ocorrências</a><a href="contato.html">Contato</a><a href="ajuda.html">Ajuda</a>
+    </nav>
+    <div class="actions" role="region" aria-label="Ações rápidas">
+      <a class="btn secondary" href="perfil.html">Perfil</a><button class="menu-toggle" id="menuToggle">☰</button>
+    </div>
+  </header>
+  <main class="container">
+    <section class="card" style="margin-top:20px">
+      <h2 class="section">Gestão de Ocorrências</h2>
+      <div id="occMap" class="map"></div>
+      <div class="status-counts">
+        Pendentes: <span id="countPendente">0</span> | Em andamento: <span id="countAndamento">0</span> | Concluídas: <span id="countAtendida">0</span>
+      </div>
+    </section>
+    <div class="card filter-card" style="margin-top:16px">
+      <input id="searchInput" type="text" placeholder="Pesquisar descrição / id..." style="flex:1" />
+      <label>Tipo da Ocorrência:<select id="filterTipo"><option value="todos">Todos os tipos</option><option value="incendio">Incêndio</option><option value="acidente">Acidente</option><option value="resgate">Resgate</option><option value="violenta">Violenta</option><option value="outro">Outro</option></select></label>
+      <label>Status:<select id="filterStatus"><option value="todos">Todos os status</option><option value="pendente">Pendente</option><option value="andamento">Em andamento</option><option value="atendida">Concluída</option></select></label>
+      <label>Data Início <input id="fromDate" type="date" /></label>
+      <label>Data Término <input id="toDate" type="date" /></label>
+      <button class="btn secondary" id="btnClearFilters"><i class="fa-solid fa-eraser"></i> Limpar</button><button class="btn primary" id="btnApplyFilters"><i class="fa-solid fa-filter"></i> Filtrar</button>
+    </div>
+    <section class="card" style="margin-top:16px">
+      <h2 class="section">Estatísticas e Relatórios</h2>
+      <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
+        <div style="flex: 1; min-width: 300px;"><canvas id="chartByType"></canvas></div>
+        <div style="flex: 1; min-width: 300px;"><canvas id="chartByStatus"></canvas></div>
+      </div>
+    <div class="actions" style="border-top: 1px solid #eee; padding-top: 20px; display: flex; gap: 10px;">
+  <h4>Exportar Lista de Ocorrências:</h4>
+  <button class="btn primary" id="btnExportCSV"><i class="fa-solid fa-file-csv"></i> Exportar para CSV</button>
+  <button class="btn" id="btnExportPDF"><i class="fa-solid fa-file-pdf"></i> Exportar para PDF</button>
+</div>
+    </section>
+    <div class="card table-wrap">
+      <table id="occTable" aria-label="Tabela de ocorrências">
+        <thead><tr><th>#</th><th><i class="fa-solid fa-shield-halved"></i> Tipo</th><th><i class="fa-solid fa-note-sticky"></i> Descrição</th><th><i class="fa-solid fa-calendar-days"></i> Início</th><th><i class="fa-solid fa-calendar-xmark"></i> Término</th><th><i class="fa-solid fa-circle-info"></i> Status</th><th><i class="fa-solid fa-gear"></i> Ações</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </main>
+  <div id="detailsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header"><h2 id="modalTitle">Detalhes da Ocorrência</h2><span class="close-button" id="closeModal">&times;</span></div>
+      <div class="modal-body">
+        <p><strong>ID:</strong> <span id="modalId"></span></p><p><strong>Tipo:</strong> <span id="modalTipo"></span></p><p><strong>Descrição:</strong> <span id="modalDescricao"></span></p><p><strong>Data de Início:</strong> <span id="modalDataInicio"></span></p><p><strong>Data de Término:</strong> <span id="modalDataTermino"></span></p>
+        <label for="modalStatus"><strong>Alterar Status:</strong></label><select id="modalStatus"><option value="pendente">Pendente</option><option value="andamento">Em andamento</option><option value="atendida">Concluída</option></select>
+        <h4>Mídia Anexada</h4><div id="media-preview">Nenhuma mídia registrada.</div>
+      </div>
+      <div class="modal-footer">
+  <button class="btn small primary" id="btnExportSingleCSV"><i class="fa-solid fa-file-csv"></i> Gerar CSV</button>
+  <button class="btn small" id="btnExportSinglePDF"><i class="fa-solid fa-file-pdf"></i> Gerar PDF</button>
+  <button class="btn primary" id="btnSaveChanges"><i class="fa-solid fa-save"></i> Salvar Alterações</button>
+</div>
+  </div>
+<footer class="footer">© CBMPE Corpo de Bombeiros Militar de Pernambuco</footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  
+  <script src="script/utils.js"></script>
+  <script src="script/shared.js"></script>
+  <script src="script/painel.js"></script>
+  
+  </body>
+</html>

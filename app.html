@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CBMPE Ocorrências</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="stylesheet" href="style/style.css" />
+  <link rel="stylesheet" href="style/institucional-extend.css" />
+  <meta name="theme-color" content="#0b5f8a">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  
+</head>
+<body>
+   <header class="header" role="banner">
+    <div class="brand" aria-label="CBMPE">
+      <img class="logo" src="icons/logo.jpg" alt="CBMPE logo">
+      <div>
+        <div style="font-weight:900">CBMPE</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.9)">Corpo de Bombeiros Militar - Pernambuco</div>
+      </div>
+    </div>
+
+    <nav class="nav" role="navigation" aria-label="Menu principal">
+      <a href="index.html">Início</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="app.html">Ocorrências</a>
+      <a href="contato.html">Contato</a>
+      <a href="ajuda.html">Ajuda</a>
+    </nav>
+
+    <div class="actions" role="region" aria-label="Ações rápidas">
+      <a class="btn secondary" href="perfil.html">Perfil</a>
+      <a class="btn primary" href="admin.html">Login</a>
+      <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="mobileMenu">☰</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <form id="occForm" class="card">
+      <label>Tipo da ocorrência:
+        <select id="tipo">
+          <option value="incendio">Incêndio</option>
+          <option value="acidente">Acidente</option>
+          <option value="resgate">Resgate</option>
+          <option value="violenta">Violenta</option>
+          <option value="outro">Outro</option>
+        </select>
+      </label>
+
+      <label>Descrição:
+        <textarea id="descricao" placeholder="Descreva a ocorrência..."></textarea>
+      </label>
+
+      <label>Fotos ou Vídeos da ocorrência:
+        <input type="file" id="midia" accept="image/*,video/*" multiple>
+      </label>
+
+      <label>Localização (GPS):
+        <button type="button" id="btnGPS">Obter Localização</button>
+        <div id="map"></div>
+      </label>
+
+      <button type="submit" class="btn primary">Registrar Ocorrência</button>
+    </form>
+  </main>
+
+  <div id="customAlert" class="custom-alert-overlay">
+    <div class="custom-alert-box">
+      <div id="customAlertHeader" class="custom-alert-header">
+        <span id="customAlertTitle"></span>
+      </div>
+      <div class="custom-alert-body">
+        <p id="customAlertMessage"></p>
+      </div>
+      <div class="custom-alert-footer">
+        <button id="customAlertClose">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">© CBMPE Corpo de Bombeiros Militar de Pernambuco</footer>
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script src="script/utils.js"></script>
+  <script src="script/app.js"></script>
+</body>
+</html>

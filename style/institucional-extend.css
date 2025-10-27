@@ -1,0 +1,30 @@
+/* ==================== institucional-extend.css (v3) ==================== */
+
+.status-label {
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.status-label.pendente { background-color: #d9534f; }
+.status-label.andamento { background-color: #f0ad4e; }
+.status-label.atendida { background-color: #5cb85c; }
+
+.status-counts {
+  margin-top: 8px;
+  font-size: 15px;
+  color: #0b5f8a;
+  text-align: center;
+}
+
+tr.status-pendente { background: #fff4f4; }
+tr.status-andamento { background: #fff9e6; }
+tr.status-atendida { background: #e8ffec; }
+
+.map {
+  height: 400px;
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
