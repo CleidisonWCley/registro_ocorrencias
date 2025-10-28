@@ -1,22 +1,27 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-   <meta charset="utf-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>CBMPE Ocorrências</title>
 
+  <!-- icons / manifest -->
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
   <link rel="manifest" href="manifest.json">
 
+  <!-- estilos -->
   <link rel="stylesheet" href="style/style.css" />
-  <link rel="stylesheet" href="style/institucional-extend.css" />
   <meta name="theme-color" content="#0b5f8a">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  
+  <style>
+    /* Pequenos ajustes locais (opcionais) para garantir espaçamento no topo */
+    body { padding-top: 0; }
+  </style>
 </head>
 <body>
-   <header class="header" role="banner">
+  <!-- HEADER PADRONIZADO -->
+  <header class="header" role="banner">
     <div class="brand" aria-label="CBMPE">
       <img class="logo" src="icons/logo.jpg" alt="CBMPE logo">
       <div>
@@ -39,34 +44,39 @@
       <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="mobileMenu">☰</button>
     </div>
   </header>
+  <div id="mobileMenu" class="mobile-menu" style="display:none" aria-hidden="true"></div>
 
-  <main class="container">
-    <form id="occForm" class="card">
-      <label>Tipo da ocorrência:
-        <select id="tipo">
-          <option value="incendio">Incêndio</option>
-          <option value="acidente">Acidente</option>
-          <option value="resgate">Resgate</option>
-          <option value="violenta">Violenta</option>
-          <option value="outro">Outro</option>
-        </select>
-      </label>
+  <main class="container" role="main">
+    <section class="card" aria-labelledby="formTitle">
+      <h2 id="formTitle" class="section">Registrar Ocorrência</h2>
+      
+      <form id="occForm" class="form-vertical">
+        <label>Tipo da ocorrência:
+          <select id="tipo">
+            <option value="incendio">Incêndio</option>
+            <option value="acidente">Acidente</option>
+            <option value="resgate">Resgate</option>
+            <option value="violenta">Violenta</option>
+            <option value="outro">Outro</option>
+          </select>
+        </label>
 
-      <label>Descrição:
-        <textarea id="descricao" placeholder="Descreva a ocorrência..."></textarea>
-      </label>
+        <label>Descrição:
+          <textarea id="descricao" placeholder="Descreva a ocorrência..."></textarea>
+        </label>
 
-      <label>Fotos ou Vídeos da ocorrência:
-        <input type="file" id="midia" accept="image/*,video/*" multiple>
-      </label>
+        <label>Fotos ou Vídeos da ocorrência:
+          <input type="file" id="midia" accept="image/*,video/*" multiple>
+        </label>
 
-      <label>Localização (GPS):
-        <button type="button" id="btnGPS">Obter Localização</button>
-        <div id="map"></div>
-      </label>
+        <label>Localização (GPS):
+          <button type="button" id="btnGPS" class="btn secondary" style="margin-top:8px">Obter Localização</button>
+          <div id="map"></div>
+        </label>
 
-      <button type="submit" class="btn primary">Registrar Ocorrência</button>
-    </form>
+        <button type="submit" class="btn action">Registrar Ocorrência</button>
+      </form>
+    </section>
   </main>
 
   <div id="customAlert" class="custom-alert-overlay">
@@ -89,5 +99,40 @@
 
   <script src="script/utils.js"></script>
   <script src="script/app.js"></script>
+  <script>
+    (function(){
+      const menuBtn = document.getElementById('menuToggle');
+      const mobileMenu = document.getElementById('mobileMenu');
+      const navHtml = document.querySelector('.nav').innerHTML;
+
+      function openMenu(){
+        mobileMenu.style.display = 'block';
+        mobileMenu.innerHTML = navHtml + '<div style="margin-top:8px"><a class="btn primary" href="admin.html">Login</a></div>';
+        menuBtn.setAttribute('aria-expanded','true');
+        mobileMenu.setAttribute('aria-hidden','false');
+      }
+
+      function closeMenu(){
+        mobileMenu.style.display = 'none';
+        mobileMenu.innerHTML = '';
+        menuBtn.setAttribute('aria-expanded','false');
+        mobileMenu.setAttribute('aria-hidden','true');
+      }
+
+      menuBtn.addEventListener('click', function(){
+        if(mobileMenu.style.display === 'block') closeMenu(); else openMenu();
+      });
+
+      document.addEventListener('click', function(e){
+        if(!mobileMenu.contains(e.target) && e.target !== menuBtn && window.innerWidth <= 900){
+          closeMenu();
+        }
+      });
+
+      window.addEventListener('resize', function(){
+        if(window.innerWidth > 900) closeMenu();
+      });
+    })();
+  </script>
 </body>
 </html>

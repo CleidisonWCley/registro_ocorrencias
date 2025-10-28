@@ -36,8 +36,9 @@
       <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="mobileMenu">☰</button>
     </div>
   </header>
+  <div id="mobileMenu" class="mobile-menu" style="display:none" aria-hidden="true"></div>
   
-  <main>
+  <main class="container">
     <h2>Dúvidas Frequentes</h2>
 
     <details>
@@ -61,6 +62,42 @@
     </details>
   </main>
 
-  <footer>© 2025 CBMPE  Corpo de Bombeiros Militar de Pernambuco</footer>
+  <footer class="footer">© 2025 CBMPE  Corpo de Bombeiros Militar de Pernambuco</footer>
+
+  <script>
+    (function(){
+      const menuBtn = document.getElementById('menuToggle');
+      const mobileMenu = document.getElementById('mobileMenu');
+      const navHtml = document.querySelector('.nav').innerHTML;
+
+      function openMenu(){
+        mobileMenu.style.display = 'block';
+        mobileMenu.innerHTML = navHtml + '<div style="margin-top:8px"><a class="btn primary" href="admin.html">Login</a></div>';
+        menuBtn.setAttribute('aria-expanded','true');
+        mobileMenu.setAttribute('aria-hidden','false');
+      }
+
+      function closeMenu(){
+        mobileMenu.style.display = 'none';
+        mobileMenu.innerHTML = '';
+        menuBtn.setAttribute('aria-expanded','false');
+        mobileMenu.setAttribute('aria-hidden','true');
+      }
+
+      menuBtn.addEventListener('click', function(){
+        if(mobileMenu.style.display === 'block') closeMenu(); else openMenu();
+      });
+
+      document.addEventListener('click', function(e){
+        if(!mobileMenu.contains(e.target) && e.target !== menuBtn && window.innerWidth <= 900){
+          closeMenu();
+        }
+      });
+
+      window.addEventListener('resize', function(){
+        if(window.innerWidth > 900) closeMenu();
+      });
+    })();
+  </script>
 </body>
 </html>

@@ -60,7 +60,39 @@
   <footer class="footer">© CBMPE  Corpo de Bombeiros Militar de Pernambuco</footer>
 
   <script>
-    function toggleMobile(){ const mm=document.getElementById('mobileMenu'); mm.style.display = mm.style.display === 'block' ? 'none' : 'block'; mm.innerHTML = document.querySelector('.nav').innerHTML; }
+    (function(){
+      const menuBtn = document.getElementById('menuToggle');
+      const mobileMenu = document.getElementById('mobileMenu');
+      const navHtml = document.querySelector('.nav').innerHTML;
+
+      function openMenu(){
+        mobileMenu.style.display = 'block';
+        mobileMenu.innerHTML = navHtml + '<div style="margin-top:8px"><a class="btn primary" href="admin.html">Login</a></div>';
+        menuBtn.setAttribute('aria-expanded','true');
+        mobileMenu.setAttribute('aria-hidden','false');
+      }
+
+      function closeMenu(){
+        mobileMenu.style.display = 'none';
+        mobileMenu.innerHTML = '';
+        menuBtn.setAttribute('aria-expanded','false');
+        mobileMenu.setAttribute('aria-hidden','true');
+      }
+
+      menuBtn.addEventListener('click', function(){
+        if(mobileMenu.style.display === 'block') closeMenu(); else openMenu();
+      });
+
+      document.addEventListener('click', function(e){
+        if(!mobileMenu.contains(e.target) && e.target !== menuBtn && window.innerWidth <= 900){
+          closeMenu();
+        }
+      });
+
+      window.addEventListener('resize', function(){
+        if(window.innerWidth > 900) closeMenu();
+      });
+    })();
   </script>
 </body>
 </html>
