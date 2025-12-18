@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
+  <title>Lascap Fire - Ocorrências</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="manifest" href="manifest.json">
+  
+  <link rel="stylesheet" href="style/style.css" />
+  <link rel="stylesheet" href="style/institucional-extend.css" />
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  
+  <meta name="theme-color" content="#0b5f8a">
+
+  <style>
+    /* ================= ESTILOS ESPECÍFICOS DE OCORRÊNCIAS ================= */
+    body { padding-top: 0; }
+
+    /* Loading Overlay */
+    #loadingOverlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: #ffffff; z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 0.5s ease;
+    }
+    .loading-icon-box { position: relative; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+    .loading-icon-box i { font-size: 50px; color: #d9534f; animation: pulse-helmet 1.5s infinite; }
+    .loading-text { font-family: 'Inter', sans-serif; font-weight: 700; color: #0b5f8a; font-size: 1.2rem; letter-spacing: 1px; animation: fadeText 1.5s infinite; }
+    
+    @keyframes pulse-helmet { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes fadeText { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .occ-card { opacity: 0; transition: opacity 0.8s ease; }
+    .occ-card.visible { opacity: 1; }
+    
+    /* Botão Mic */
+    #btnMic.recording { animation: pulse-red 1.5s infinite; }
+    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(217, 83, 79, 0); } 100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); } }
+    
+    /* Leaflet Popup */
+    .leaflet-popup-content-wrapper { border-radius: 8px; }
+    .leaflet-popup-content { font-size: 13px; line-height: 1.4; margin: 10px; }
+    .popup-title { font-weight: 800; color: #0b5f8a; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom:4px;}
+    .popup-addr { color: #555; }
+
+    /* --- AUTOCOMPLETE DA BUSCA (NOVO) --- */
+    .search-wrapper { position: relative; flex: 1; } /* Container para posicionar a lista */
+    
+    .suggestions-list {
+        position: absolute; top: 100%; left: 0; right: 0;
+        background: white; border: 1px solid #ccc; border-top: none;
+        border-radius: 0 0 8px 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        z-index: 1000; max-height: 250px; overflow-y: auto;
+        display: none; /* Oculto por padrão */
+    }
+    
+    .suggestion-item {
+        padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+        font-size: 13px; color: #333; display: flex; align-items: center; gap: 8px;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:hover { background-color: #f0f7fa; color: #0b5f8a; }
+    .suggestion-item i { color: #ccc; font-size: 12px; }
+  </style>
+</head>
+<body class="app-mode">
+
+  <div id="loadingOverlay">
+      <div class="loading-icon-box"><i class="fa-solid fa-helmet-safety"></i></div>
+      <div class="loading-text">CARREGANDO...</div>
+  </div>
+  
+  <header class="header" role="banner">
+    <div class="brand">
+      <img class="logo" src="icons/logo.png" alt="Logo">
+      <div><div>LASCAP FIRE</div><div style="font-size:11px;color:rgba(255,255,255,0.9)">Sistema de Ocorrências</div></div>
+    </div>
+    <nav class="nav" role="navigation">
+      <a href="index.html">Início</a><a href="servicos.html">Sobre</a><a href="app.html" class="active">Ocorrências</a><a href="contato.html">Contato</a><a href="ajuda.html">Ajuda</a>
+    </nav>
+    <div class="actions">
+      <a class="btn primary small" href="admin.html">Painel</a><a class="btn secondary small" href="perfil.html">Perfil</a><button class="menu-toggle" id="menuToggle">☰</button>
+    </div>
+  </header>
+  
+  <div id="mobileMenu" class="mobile-menu" style="display:none"></div>
+
+  <main class="container">
+    <section class="card occ-card" id="mainCard">
+      <h2 class="section">Nova Ocorrência</h2>
+      
+      <form id="occForm" class="form-vertical">
+        <div>
+            <label>Tipo de Ocorrência:</label>
+            <select id="tipo">
+                <option value="incendio">Incêndio</option>
+                <option value="acidente">Acidente de Trânsito</option>
+                <option value="resgate">Busca e Resgate</option>
+                <option value="violenta">Agressão / Violência</option>
+                <option value="outro">Outros</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Descrição (Toque no microfone):</label>
+            <div class="desc-wrapper">
+                <textarea id="descricao" placeholder="Relate o que está acontecendo..."></textarea>
+                <button type="button" id="btnMic" title="Gravar Áudio"><i class="fa-solid fa-microphone"></i></button>
+            </div>
+            <small id="micStatus" style="color: #1ca66b; display:none; margin-top:4px; font-weight:bold;">Gravando áudio...</small>
+        </div>
+
+        <div>
+            <label>Foto do Local (Opcional):</label>
+            <input type="file" id="midia" accept="image/*" capture="environment">
+        </div>
+
+        <div>
+            <label>Localização (Busca ou GPS):</label>
+            
+            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                <div class="search-wrapper">
+                    <input type="text" id="manualAddress" placeholder="Digite Rua, Bairro ou CEP..." 
+                           style="width:100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" autocomplete="off">
+                    <div id="addressSuggestions" class="suggestions-list"></div>
+                </div>
+
+                <button type="button" id="btnSearchAddr" class="btn secondary" style="padding: 0 15px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+
+            <button type="button" id="btnGPS" class="btn secondary" style="width:100%; margin-bottom: 5px; background-color: #e6f7ff; color: #0056b3; border: 1px solid #b8e2f8;">
+                 <i class="fa-solid fa-location-crosshairs"></i> Usar Minha Localização Atual (GPS)
+            </button>
+            
+            <div id="map" class="map"></div>
+            <input type="hidden" id="enderecoEscrito" value="">
+        </div>
+
+        <label style="margin-top:10px; text-align:center;">Certificação Digital:</label>
+        <div class="digital-stamp">
+            <img src="icons/logo.png" alt="Logo">
+            <div class="stamp-text">
+                <h4>LASCAP FIRE</h4>
+                <p>Certificação Digital CBMPE</p>
+                <p style="font-size:10px; margin-top:2px;">Autenticado pelo Sistema</p>
+            </div>
+            <i class="fa-solid fa-circle-check stamp-check"></i>
+        </div>
+
+        <button type="submit" class="btn action" style="width:100%; margin-top:10px; padding: 16px; font-size: 16px;">
+            <i class="fa-solid fa-paper-plane"></i> ENVIAR OCORRÊNCIA
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <div id="customAlert" class="custom-alert-overlay">
+    <div class="custom-alert-box">
+      <div id="customAlertHeader" class="custom-alert-header"></div>
+      <div class="custom-alert-body"><p id="customAlertMessage"></p></div>
+      <div class="custom-alert-footer"><button id="customAlertClose" class="btn primary">FECHAR</button></div>
+    </div>
+  </div>
+
+  <footer class="footer">© 2025 Lascap Fire - CBMPE</footer>
+  
+  <script>
+    (function(){
+      const menuBtn = document.getElementById('menuToggle');
+      const mobileMenu = document.getElementById('mobileMenu');
+      const navLinks = document.querySelector('.nav').innerHTML; 
+      menuBtn.addEventListener('click', () => {
+        if(mobileMenu.style.display === 'flex') mobileMenu.style.display = 'none';
+        else { mobileMenu.style.display = 'flex'; mobileMenu.innerHTML = navLinks; }
+      });
+    })();
+  </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script/utils.js"></script>
+  <script type="module" src="script/firebase-config.js"></script>
+  <script type="module" src="script/app.js"></script>
+</body>
+</html>

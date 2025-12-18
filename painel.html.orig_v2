@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CBMPE Painel Administrativo</title>
+
+  <!-- icons / manifest -->
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- seu CSS unificado -->
+  <link rel="stylesheet" href="style/style.css" />
+
+  <meta name="theme-color" content="#0b5f8a">
+
+  <style>
+    /* ajustes locais específicos do painel */
+    .filter-card { display:flex; gap:12px; flex-wrap:wrap; align-items:center; padding:14px; }
+    .filter-card select, .filter-card input[type="date"], .filter-card input[type="text"] { padding:8px;border-radius:8px;border:1px solid #d5d9dd; }
+    .icon-btn { display:inline-flex; gap:8px; align-items:center; padding:8px 10px; border-radius:8px; border:0; cursor:pointer; font-weight:700; }
+    .icon-blue { color:#0b5f8a; }
+    .icon-red { color:#c8102e; }
+    .icon-green { color:#1ca66b; }
+    .small-muted { font-size:0.9rem;color:var(--muted); }
+    .table-wrap { overflow:auto; border-radius:8px; }
+    @media(max-width:900px){
+      .filter-card{flex-direction:column; align-items:stretch}
+    }
+  </style>
+</head>
+<body>
+  <!-- header compartilhado -->
+  <!-- HEADER PADRONIZADO -->
+  <header class="header" role="banner">
+    <div class="brand" aria-label="CBMPE">
+      <img class="logo" src="icons/logo.jpg" alt="CBMPE logo">
+      <div>
+        <div style="font-weight:900">CBMPE</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.9)">Painel de Gestão Administrativo</div>
+      </div>
+    </div>
+
+    <nav class="nav" role="navigation" aria-label="Menu principal">
+      <a href="index.html">Início</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="app.html">Ocorrências</a>
+      <a href="contato.html">Contato</a>
+      <a href="ajuda.html">Ajuda</a>
+    </nav>
+
+    <div class="actions" role="region" aria-label="Ações rápidas">
+      <a class="btn secondary" href="perfil.html">Perfil</a>
+      <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="mobileMenu">☰</button>
+    </div>
+  </header>
+    <nav class="nav" aria-hidden="true"></
+  </header>
+
+  <main class="container">
+
+      <!-- ====== MAPA DE OCORRÊNCIAS ====== -->
+<!-- Adicione esta seção onde quiser no painel, por exemplo abaixo dos filtros / antes da tabela -->
+<section class="card" style="margin-top:16px">
+  <h2 class="section">Gestão de Ocorrências</h2>
+  <div id="occMap" class="map"></div>
+</section>
+
+<!-- Leaflet CSS (no head ou antes do script leaflet.js) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<!-- Leaflet JS (antes do painel.js) -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- seu painel.js -->
+<script src="script/painel.js"></script>
+
+
+<!-- Adicione o CSS do Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+      <div class="card filter-card" aria-label="Filtros">
+        <input id="searchInput" type="text" placeholder="Pesquisar descrição / id..." style="flex:1" />
+        <select id="filterTipo">
+          <option value="todos">Todos os tipos</option>
+          <option value="incendio">Incêndio</option>
+          <option value="acidente">Acidente</option>
+          <option value="resgate">Resgate</option>
+          <option value="violenta">Violenta</option>
+          <option value="outro">Outro</option>
+        </select>
+
+        <select id="filterStatus">
+          <option value="todos">Todos os status</option>
+          <option value="pendente">Pendente</option>
+          <option value="andamento">Em andamento</option>
+          <option value="atendida">Atendida</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+
+        <label class="small-muted" style="display:inline-flex;flex-direction:column">Data Início
+          <input id="fromDate" type="date" />
+        </label>
+
+        <label class="small-muted" style="display:inline-flex;flex-direction:column">Data Término
+          <input id="toDate" type="date" />
+        </label>
+
+        <button class="btn primary" id="btnClearFilters"><i class="fa-solid fa-eraser"></i> Limpar</button>
+        <button class="btn action" id="btnRefresh"><i class="fa-solid fa-arrows-rotate"></i> Atualizar</button>
+
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="icon-btn" id="btnExportCSV"><i class="fa-solid fa-file-csv icon-blue"></i> CSV</button>
+          <button class="icon-btn" id="btnExportPDF"><i class="fa-solid fa-file-pdf icon-red"></i> PDF</button>
+        </div>
+      </div>
+
+      <div class="card table-wrap">
+        <table id="occTable" aria-label="Tabela de ocorrências">
+          <thead>
+            <tr>
+              <th><i class="fa-solid fa-hashtag"></i></th>
+              <th><i class="fa-solid fa-shield-halved"></i> Tipo</th>
+              <th><i class="fa-solid fa-note-sticky"></i> Descrição</th>
+              <th><i class="fa-solid fa-calendar-days"></i> Início</th>
+              <th><i class="fa-solid fa-calendar-xmark"></i> Término</th>
+              <th><i class="fa-solid fa-circle-info"></i> Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© CBMPE  Corpo de Bombeiros Militar de Pernambuco</footer>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- painel.js (externo) -->
+  <script src="script/painel.js"></script>
+</body>
+</html>

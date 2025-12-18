@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lixeira - Lascap Fire</title>
+
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <link rel="stylesheet" href="style/style.css">
+  <link rel="stylesheet" href="style/painel.css">
+  
+  <meta name="theme-color" content="#0b5f8a" />
+</head>
+<body>
+
+  <header class="header" role="banner">
+    <div class="brand">
+      <img class="logo" src="icons/logo.png" alt="CBMPE logo">
+      <div>
+        <div style="font-weight:900; text-transform:uppercase;">Lixeira</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.8)">Recuperação e Exclusão de Dados</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a href="painel.html" class="btn secondary small" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+        <i class="fa-solid fa-arrow-left"></i> VOLTAR AO PAINEL
+      </a>
+    </div>
+  </header>
+
+  <main class="container trash-container">
+    
+    <div style="margin-bottom: 20px;">
+        <h2 class="section" style="border:none; margin-bottom: 5px; color:#333;">Ocorrências Excluídas</h2>
+        <p style="margin:0; font-size:13px; color:#666;">
+            <i class="fa-solid fa-circle-info"></i> Visualize quem excluiu, o status original e restaure se necessário.
+        </p>
+    </div>
+
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label><i class="fa-solid fa-magnifying-glass"></i> Buscar na Lixeira</label>
+            <input id="trashSearch" type="text" class="filter-input" placeholder="Quem excluiu, tipo, descrição...">
+        </div>
+        
+        <div class="filter-group">
+            <label><i class="fa-solid fa-filter"></i> Status Original</label>
+            <select id="trashStatus" class="filter-input">
+                <option value="">Todos</option>
+                <option value="pendente">Pendente</option>
+                <option value="andamento">Em Andamento</option>
+                <option value="atendida">Concluída</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label><i class="fa-regular fa-calendar"></i> Data Exclusão</label>
+            <input id="trashDate" type="date" class="filter-input">
+        </div>
+
+        <div class="filter-group" style="flex:0;">
+            <label>&nbsp;</label>
+            <button id="btnClearTrash" class="btn small secondary" title="Limpar Filtros">
+                <i class="fa-solid fa-eraser"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="trashGrid" class="trash-grid">
+        <div class="empty-trash">
+            <i class="fa-solid fa-spinner fa-spin"></i><br>Carregando lixeira...
+        </div>
+    </div>
+
+  </main>
+
+  <script src="script/utils.js"></script>
+  <script src="script/shared.js"></script>
+  <script type="module" src="script/lixeira.js"></script>
+</body>
+</html>

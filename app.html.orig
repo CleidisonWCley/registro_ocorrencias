@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>CBMPE Ocorrências</title>
+
+  <link rel="icon" href="icons/favicon-32x32.png"/>
+  <link rel="stylesheet" href="style/style.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+</head>
+
+<body>
+  <!-- HEADER PADRONIZADO -->
+  <header class="header" role="banner">
+    <div class="brand" aria-label="CBMPE">
+      <img class="logo" src="icons/logo.jpg" alt="CBMPE logo">
+      <div>
+        <div style="font-weight:900">CBMPE</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.9)">Corpo de Bombeiros Militar - Pernambuco</div>
+      </div>
+    </div>
+
+    <nav class="nav" role="navigation" aria-label="Menu principal">
+      <a href="index.html">Início</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="app.html">Ocorrências</a>
+      <a href="contato.html">Contato</a>
+      <a href="ajuda.html">Ajuda</a>
+    </nav>
+
+    <div class="actions" role="region" aria-label="Ações rápidas">
+      <a class="btn secondary" href="perfil.html">Perfil</a>
+      <a class="btn primary" href="admin.html">Login</a>
+      <button class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="mobileMenu">☰</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- ====== SEÇÃO REGISTRO ====== -->
+    <section class="card">
+      <h2 class="section">Registrar Ocorrência</h2>
+      
+      <div id="map" class="map"></div>
+      <p class="muted" id="mapStatus">Ative a localização para definir o ponto no mapa.</p>
+
+      <form id="occForm" class="form" onsubmit="submitOcc(event)">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+          <div>
+            <label>Nome (opcional)</label>
+            <input id="userName" type="text" placeholder="Seu nome">
+          </div>
+          <div>
+            <label>Telefone (opcional)</label>
+            <input id="userPhone" type="tel" placeholder="(DDD) _____-____">
+          </div>
+          <div>
+            <label>Tipo</label>
+            <select id="occType">
+              <option value="incendio">Incêndio</option>
+              <option value="acidente">Acidente</option>
+              <option value="resgate">Resgate</option>
+              <option value="violenta">Ocorrência violenta</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <label>Descrição</label>
+          <textarea id="occDesc" placeholder="Informações relevantes"></textarea>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+          <button type="button" class="btn action" onclick="locateMe()">Obter localização</button>
+          <button type="submit" class="btn primary">Enviar ocorrência</button>
+          <button type="button" class="btn secondary" onclick="saveProfile()">Salvar perfil</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ====== SEÇÃO HISTÓRICO ====== -->
+    <section class="card">
+      <h2 class="section">Minhas ocorrências (local)</h2>
+      <div class="table-wrap">
+        <table id="myOccTable">
+          <thead><tr><th>ID</th><th>Tipo</th><th>Descrição</th><th>Data</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© CBMPE Corpo de Bombeiros de Pernambuco</footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // === MENU MOBILE ===
+    function toggleMobile(){
+      const mm=document.getElementById('mobileMenu');
+      mm.style.display = mm.style.display==='block' ? 'none' : 'block';
+      mm.innerHTML = document.querySelector('.nav').innerHTML;
+    }
+
+    // === VARIÁVEIS ===
+    let map, marker;
+
+    // === INICIALIZA O MAPA ===
+    function initMap() {
+      map = L.map('map').setView([-8.05, -34.9], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+    }
+
+    // === GEOLOCALIZAÇÃO ===
+    function locateMe() {
+      const status = document.getElementById('mapStatus');
+      if (!navigator.geolocation) {
+        status.textContent = 'Geolocalização não suportada.';
+        return;
+      }
+
+      status.textContent = 'Obtendo localização...';
+      navigator.geolocation.getCurrentPosition(pos => {
+        const { latitude, longitude } = pos.coords;
+
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([latitude, longitude]).addTo(map)
+          .bindPopup(` Local detectado<br>Lat: ${latitude.toFixed(5)}<br>Lng: ${longitude.toFixed(5)}`)
+          .openPopup();
+
+        map.setView([latitude, longitude], 15);
+        status.textContent = 'Localização obtida com sucesso.';
+        localStorage.setItem('cbmpe_location', JSON.stringify({ lat: latitude, lng: longitude }));
+      }, err => {
+        status.textContent = 'Erro ao obter localização: ' + err.message;
+      });
+    }
+
+    // === SALVAR PERFIL ===
+    function saveProfile() {
+      const p = {
+        nome: document.getElementById('userName').value,
+        telefone: document.getElementById('userPhone').value
+      };
+      localStorage.setItem('cbmpe_profile', JSON.stringify(p));
+      alert('Perfil salvo localmente.');
+    }
+
+    // === CARREGAR PERFIL ===
+    function loadProfile() {
+      const p = JSON.parse(localStorage.getItem('cbmpe_profile') || 'null');
+      if (p) {
+        document.getElementById('userName').value = p.nome || '';
+        document.getElementById('userPhone').value = p.telefone || '';
+      }
+    }
+
+    // === HISTÓRICO LOCAL ===
+    function loadMyOccs() {
+      const arr = JSON.parse(localStorage.getItem('cbmpe_ocorrencias') || '[]');
+      const tbody = document.querySelector('#myOccTable tbody');
+      tbody.innerHTML = '';
+      arr.forEach(o => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>#${o.id}</td><td>${o.tipo}</td><td>${o.desc}</td><td>${o.data}</td><td>${o.status}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // === REGISTRAR OCORRÊNCIA ===
+    function submitOcc(e) {
+      e.preventDefault();
+      const name = document.getElementById('userName').value.trim();
+      const phone = document.getElementById('userPhone').value.trim();
+      const tipo = document.getElementById('occType').value;
+      const desc = document.getElementById('occDesc').value.trim();
+
+      const location = JSON.parse(localStorage.getItem('cbmpe_location') || '{}');
+      if (!location.lat || !location.lng) {
+        alert('Ative a localização antes de enviar.');
+        return;
+      }
+
+      const arr = JSON.parse(localStorage.getItem('cbmpe_ocorrencias') || '[]');
+      const id = arr.length ? arr[arr.length - 1].id + 1 : 1;
+      const now = new Date().toLocaleString();
+
+      const occ = { id, tipo, desc, data: now, status: 'pendente', nome: name, telefone: phone, lat: location.lat, lng: location.lng };
+      arr.push(occ);
+      localStorage.setItem('cbmpe_ocorrencias', JSON.stringify(arr));
+
+      alert('Ocorrência registrada com sucesso.');
+      loadMyOccs();
+      document.getElementById('occForm').reset();
+    }
+
+    // === INICIALIZAÇÃO ===
+    window.addEventListener('load', () => {
+      initMap();
+      loadProfile();
+      loadMyOccs();
+    });
+  </script>
+</body>
+</html>

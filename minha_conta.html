@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
+  <title>Lascap Fire - Meus Dados</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="stylesheet" href="style/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <meta name="theme-color" content="#0b5f8a">
+</head>
+<body style="background-color: #f0f2f5;">
+
+  <header class="header">
+    <div class="brand">
+        <img class="logo" src="icons/logo.png" alt="Logo">
+        <div><div>Lascap Fire</div><div style="font-size:11px;">Meus Dados</div></div>
+    </div>
+    <nav class="nav">
+        <a href="painel.html">Voltar ao Painel</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div class="card" style="max-width: 500px; width: 100%;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 50px; color: #0b5f8a;"><i class="fa-solid fa-user-pen"></i></div>
+            <h2>Editar Perfil</h2>
+            <p style="color:#666;">Mantenha seus dados atualizados.</p>
+        </div>
+
+        <form id="formEditProfile">
+            <label>Nome Completo</label>
+            <input type="text" id="editNome" required>
+
+            <label>Telefone / WhatsApp</label>
+            <input type="tel" id="editTel" placeholder="(81) 9..." required>
+
+            <label>E-mail (Não editável)</label>
+            <input type="email" id="editEmail" disabled style="background: #eee; color: #888;">
+
+            <label>Matrícula / Patente (Opcional)</label>
+            <input type="text" id="editPatente" placeholder="Ex: Cb. 12345">
+
+            <button type="submit" class="btn primary" style="width:100%; margin-top: 20px;">
+                <i class="fa-solid fa-floppy-disk"></i> SALVAR ALTERAÇÕES
+            </button>
+        </form>
+    </div>
+  </main>
+
+  <script src="script/shared.js"></script>
+  
+  <script type="module">
+    import { auth, db } from './script/firebase-config.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+    import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+    const form = document.getElementById('formEditProfile');
+    const nomeInput = document.getElementById('editNome');
+    const telInput = document.getElementById('editTel');
+    const emailInput = document.getElementById('editEmail');
+    const patInput = document.getElementById('editPatente');
+
+    // 1. Verifica login e CARREGA os dados
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const docRef = doc(db, "usuarios", user.uid);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                nomeInput.value = data.nome || "";
+                telInput.value = data.telefone || "";
+                emailInput.value = user.email;
+                patInput.value = data.patente || "";
+            }
+        } else {
+            window.location.href = 'admin.html';
+        }
+    });
+
+    // 2. SALVA as alterações (Com Alerta Padronizado)
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = form.querySelector('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+        btn.disabled = true;
+
+        try {
+            const user = auth.currentUser;
+            if(user) {
+                const docRef = doc(db, "usuarios", user.uid);
+                
+                await updateDoc(docRef, {
+                    nome: nomeInput.value,
+                    telefone: telInput.value,
+                    patente: patInput.value
+                });
+
+                // AQUI MUDOU: Alerta bonito em vez de alert()
+                showCustomAlert("Dados atualizados com sucesso!", "success");
+                
+                // Pequeno delay para o usuário ler a mensagem antes de voltar
+                setTimeout(() => {
+                    window.location.href = 'painel.html';
+                }, 1500);
+            }
+        } catch (error) {
+            console.error(error);
+            showCustomAlert("Erro ao atualizar: " + error.message, "error");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+  </script>
+</body>
+</html>

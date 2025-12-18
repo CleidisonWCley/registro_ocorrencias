@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lascap Fire - Login</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  
+  <link rel="stylesheet" href="style/style.css" />
+  <link rel="stylesheet" href="style/admin.css" />
+  
+  <meta name="theme-color" content="#0b5f8a">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body class="login-page">
+
+  <main class="login-container">
+    <div class="login-card">
+      
+      <div class="header-login">
+          <img src="icons/logo.png" alt="CBMPE Logo" class="login-logo">
+          <h1>Lascap Fire</h1>
+          <p>Acesso Administrativo</p>
+      </div>
+
+      <form id="loginForm">
+        
+        <div class="input-wrapper">
+            <label for="adminUser">E-mail</label>
+            <div class="input-icon-group">
+                <input id="adminUser" type="email" placeholder="bm@cbm.pe.gov.br" required />
+                <i class="fa-solid fa-envelope"></i>
+            </div>
+        </div>
+
+        <div class="input-wrapper">
+            <label for="adminPass">Senha</label>
+            <div class="input-icon-group">
+                <input id="adminPass" type="password" placeholder="Sua senha" required />
+                <i class="fa-solid fa-lock"></i>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-login">
+          ENTRAR <i class="fa-solid fa-arrow-right"></i>
+        </button>
+ 
+        <div style="display:flex; align-items:center; margin: 20px 0; color:#aaa;">
+            <div style="flex:1; height:1px; background:#ddd;"></div>
+            <span style="padding:0 10px; font-size:12px;">OU</span>
+            <div style="flex:1; height:1px; background:#ddd;"></div>
+        </div>
+
+        <button type="button" id="btnGoogleLogin" class="btn-google-login">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+            Acessar com Google
+        </button>
+
+        <div class="login-footer">
+            <a href="perfil.html" class="footer-link">Criar conta</a>
+            <span class="dot">•</span>
+            <a href="#" id="forgotPassword" class="footer-link">Esqueci a senha</a>
+        </div>
+        
+        <a href="index.html" class="back-link"><i class="fa-solid fa-chevron-left"></i> Voltar ao início</a>
+
+      </form>
+    </div>
+  </main>
+
+  <script src="script/shared.js"></script> 
+  <script type="module" src="script/admin.js"></script>
+</body>
+</html>

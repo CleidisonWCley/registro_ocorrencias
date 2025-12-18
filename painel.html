@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lascap Fire - Painel Administrativo</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <link rel="stylesheet" href="style/style.css">
+  <link rel="stylesheet" href="style/institucional-extend.css">
+  <link rel="stylesheet" href="style/painel.css">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <meta name="theme-color" content="#0b5f8a" />
+</head>
+<body>
+  
+  <audio id="alertSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+
+  <header class="header" role="banner">
+    <div class="brand">
+      <img class="logo" src="icons/logo.png" alt="CBMPE logo">
+      <div>
+        <div style="font-weight:900; text-transform:uppercase;">Painel Administrativo</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.8)">Monitoramento em Tempo Real</div>
+      </div>
+    </div>
+    <div class="actions">
+      <span id="userEmailDisplay" class="user-email-display"></span>
+
+      <a class="btn secondary small" href="minha_conta.html" title="Meus Dados">
+        <i class="fa-solid fa-user-gear"></i>
+      </a>
+
+      <a class="btn small" href="lixeira.html" title="Lixeira / Restaurar" style="background: #e74c3c; color: white; margin-right: 5px;">
+        <i class="fa-solid fa-trash-can"></i>
+      </a>
+
+      <button id="btnLogout" class="btn secondary btn-logout">
+        <i class="fa-solid fa-power-off"></i> Sair
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <section class="card map-section">
+      <div class="map-header">
+          <h2 class="section map-title">
+              <i class="fa-solid fa-map-location-dot"></i> Operação em Tempo Real
+          </h2>
+          <div class="map-legend">
+              <span><i class="fa-solid fa-circle" style="color:#d9534f"></i> Pendente</span>
+              <span><i class="fa-solid fa-circle" style="color:#ffc107"></i> Em Andamento</span>
+              <span style="opacity:0.8"><i class="fa-solid fa-check" style="color:#5cb85c"></i> Concluída </span>
+          </div>
+      </div>
+      <div id="occMap"></div>
+    </section>
+
+    <section class="card intelligence-section">
+      <div class="intelligence-header">
+          <div>
+              <h2 class="section" style="margin:0;">Monitoramento de Dados</h2>
+              <p class="section-subtitle">Relatórios e métricas em tempo real.</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+             <button id="btnGenerateCharts" class="btn small primary">
+                 <i class="fa-solid fa-sync"></i> ATUALIZAR
+             </button>
+             <button id="btnToggleCharts" class="btn-toggle-chart" title="Minimizar/Expandir">
+                 <i class="fa-solid fa-chevron-up"></i>
+             </button>
+          </div>
+      </div>
+
+      <div id="chartsWrapper">
+          <div id="chartsArea" class="charts-container">
+              <div class="chart-box">
+                  <h4 class="chart-title">Ocorrências por Tipo</h4>
+                  <canvas id="chartType"></canvas>
+              </div>
+              <div class="chart-box">
+                  <h4 class="chart-title">Status Operacional</h4>
+                  <canvas id="chartStatus"></canvas>
+              </div>
+              <div class="chart-box chart-full-width">
+                  <h4 class="chart-title">Evolução Mensal (Tendência)</h4>
+                  <canvas id="chartTimeline"></canvas>
+              </div>
+              
+              <div class="chart-actions" style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                   <button onclick="downloadGeneralPDF()" class="btn small" style="background-color: #d9534f; color: white; border:none;">
+                       <i class="fa-solid fa-file-pdf"></i> Relatório PDF
+                   </button>
+                   <button onclick="downloadCharts()" class="btn small" style="background-color: #27ae60; color: white; border:none;">
+                       <i class="fa-solid fa-file-csv"></i> Exportar CSV
+                   </button>
+              </div>
+          </div>
+      </div>
+    </section>
+
+    <div class="card table-wrap table-section">
+      <div class="table-header">
+          <h3 style="margin:0;">Gestão de Ocorrências</h3>
+      </div>
+      
+      <div class="filter-bar">
+          <div class="filter-group">
+              <label><i class="fa-solid fa-magnifying-glass"></i> Busca Inteligente</label>
+              <input id="searchInput" type="text" class="filter-input" placeholder="Endereço, tipo, descrição..." list="searchSuggestions">
+              <datalist id="searchSuggestions"></datalist>
+          </div>
+          
+          <div class="filter-group">
+              <label><i class="fa-solid fa-filter"></i> Status</label>
+              <select id="filterStatus" class="filter-input">
+                  <option value="">Todos</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="andamento">Em Andamento</option>
+                  <option value="atendida">Concluída</option>
+              </select>
+          </div>
+
+          <div class="filter-group">
+              <label><i class="fa-regular fa-calendar"></i> Data</label>
+              <input id="filterDate" type="date" class="filter-input">
+          </div>
+
+          <div class="filter-group" style="flex:0;">
+              <label>&nbsp;</label>
+              <button id="btnClearFilters" class="btn small secondary" title="Limpar Filtros">
+                  <i class="fa-solid fa-eraser"></i>
+              </button>
+          </div>
+      </div>
+      
+      <table id="occTable">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Tipo</th>
+                <th>Descrição</th>
+                <th>Data</th>
+                <th>Endereço</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <tr><td colspan="6" class="loading-row">Carregando dados...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <div id="detailsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+          <h2 id="modalTitle">Prontuário da Ocorrência</h2>
+          <span class="close-button" id="closeModal">&times;</span>
+      </div>
+      
+      <div class="modal-body">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items: center;">
+             <span class="modal-id-text" id="modalIdDisplay">ID: ...</span>
+             <span id="modalDateDisplay" style="font-size:12px; font-weight:bold; color:#555;"></span>
+        </div>
+
+        <p style="margin-top:15px;"><strong>Descrição do Relato:</strong></p>
+        <div id="modalDescricao" class="modal-description-box"></div>
+        
+        <p><strong>Localização:</strong> <span id="modalEndereco"></span></p>
+        
+        <hr class="modal-separator">
+        
+        <label for="modalStatus" class="modal-label">Atualizar Status Operacional:</label>
+        <select id="modalStatus" class="modal-select">
+            <option value="pendente">🔴 PENDENTE (Visível no Mapa)</option>
+            <option value="andamento">🟡 EM ANDAMENTO</option>
+            <option value="atendida">🟢 CONCLUÍDA (Arquivar)</option>
+        </select>
+
+        <h4>Mídia do Local</h4>
+        <div id="media-preview" class="media-preview-box">
+            Carregando mídia...
+        </div>
+
+        <div class="digital-stamp-box" style="margin-top: 30px; margin-bottom: 20px;">
+            <img src="icons/logo.png" class="stamp-logo" alt="CBMPE Mascote"> 
+            
+            <div class="stamp-details">
+                <h4>Certificação Digital CBMPE</h4>
+                <p>Hash: <span id="stampHash">...</span></p>
+                <p>Assinado em: <span id="stampDate">...</span> via App Seguro</p>
+                <p style="color:#2ecc71; font-weight:bold; margin-top:2px; font-size:11px;">
+                    <i class="fa-solid fa-check-circle"></i> Autenticado
+                </p>
+            </div>
+        </div>
+        
+        <div class="modal-export-actions">
+            <button class="btn-export" id="btnExportPDF">
+                <i class="fa-solid fa-file-pdf" style="color:#e74c3c"></i> Gerar PDF
+            </button>
+            <button class="btn-export" id="btnExportCSV">
+                <i class="fa-solid fa-file-csv" style="color:#27ae60"></i> Exportar CSV
+            </button>
+        </div>
+
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn primary btn-save-modal" id="btnSaveChanges">
+            <i class="fa-solid fa-floppy-disk"></i> SALVAR ALTERAÇÕES
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="modalTelefone" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header-alert">
+            <i class="fa-solid fa-bell" style="color: #f0ad4e;"></i>
+            <h3>Aviso Operacional</h3>
+        </div>
+        
+        <p class="phone-modal-text">
+            Olá, <strong><span id="lblNomeUser">Agente</span></strong>.<br><br>
+            Notamos que seu <strong>celular de contato</strong> não está cadastrado. 
+            <br><br>
+            <em class="phone-highlight">Por que pedimos isso?</em><br>
+            Em caso de falha no rádio ou urgência, a central precisa de um meio rápido para contactar sua viatura ou você.
+        </p>
+
+        <form id="formUpdateTel">
+            <div class="input-icon-group">
+                <input type="tel" id="newPhone" placeholder="Digite seu WhatsApp/Celular..." class="phone-input">
+                <i class="fa-solid fa-phone phone-input-icon"></i>
+            </div>
+            
+            <button type="submit" class="btn primary btn-phone-submit">
+                <i class="fa-solid fa-check"></i> SALVAR CONTATO
+            </button>
+            
+            <button type="button" id="btnDismissPhone" class="btn secondary btn-phone-dismiss">
+                Estou ciente, continuar sem número
+            </button>
+        </form>
+    </div>
+  </div>
+
+  <footer class="footer">© 2025 Lascap Fire - CBMPE</footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  
+  <script src="script/utils.js"></script>
+  <script src="script/shared.js"></script>
+  <script type="module" src="script/painel.js"></script>
+</body>
+</html>

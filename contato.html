@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
+  <title>Lascap Fire - Contato</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="stylesheet" href="style/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <meta name="theme-color" content="#0b5f8a">
+
+  <style>
+    /* ================= ESTILOS ESPECÍFICOS DE CONTATO ================= */
+    body { padding-top: 0; }
+
+    /* Animação de Entrada */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-block {
+        opacity: 0; animation: fadeInUp 0.8s ease-out forwards;
+    }
+    .delay-1 { animation-delay: 0.2s; }
+
+    /* Grid de Contato */
+    .contact-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-top: 20px;
+    }
+
+    /* Ajuste dos Inputs com Ícones */
+    .input-group {
+        position: relative;
+        margin-bottom: 15px;
+    }
+    .input-group i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        font-size: 16px;
+    }
+    .input-group textarea + i {
+        top: 20px; 
+        transform: none;
+    }
+    
+    .input-group input, .input-group textarea, .input-group select {
+        padding-left: 45px; 
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+
+    /* Card de Informações (Lateral) */
+    .info-card {
+        background: #f8fbff;
+        border: 1px solid #e1e4e8;
+        border-radius: 8px;
+        padding: 25px;
+        height: 100%;
+    }
+    .info-item {
+        display: flex; gap: 15px; margin-bottom: 20px; align-items: center;
+        transition: transform 0.2s; cursor: pointer;
+    }
+    .info-item:hover { transform: translateX(5px); }
+    .info-icon-box {
+        width: 40px; height: 40px; background: #fff;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        border: 1px solid #e1e4e8; color: var(--brand);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    /* Mapa Visual (Simulado) */
+    .map-placeholder {
+        width: 100%; height: 200px;
+        background: #eef5f9 url('https://user-images.githubusercontent.com/43313429/219878201-381c0383-e18d-4e20-944a-f2a87265913e.png') center/cover no-repeat; 
+        border-radius: 8px;
+        margin-top: 20px;
+        border: 2px solid #fff;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        display: flex; align-items: center; justify-content: center;
+        position: relative;
+    }
+    .map-pin {
+        font-size: 40px; color: #d9534f;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        animation: bounce 2s infinite;
+    }
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+        40% {transform: translateY(-10px);}
+        60% {transform: translateY(-5px);}
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .contact-container { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header" role="banner">
+    <div class="brand">
+      <img class="logo" src="icons/logo.png" alt="Logo Lascap Fire">
+      <div>
+        <div style="text-transform: uppercase;">LASCAP FIRE</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.9)">Serviço de Ocorrências</div>
+      </div>
+    </div>
+
+    <nav class="nav" role="navigation">
+      <a href="index.html">Início</a>
+      <a href="servicos.html">Sobre</a>
+      <a href="app.html">Ocorrências</a>
+      <a href="contato.html" class="active">Contato</a>
+      <a href="ajuda.html">Ajuda</a>
+    </nav>
+
+    <div class="actions">
+      <a class="btn secondary small" href="perfil.html">PERFIL</a>
+      <a class="btn primary small" href="admin.html">LOGIN</a>
+      <button class="menu-toggle" id="menuToggle">☰</button>
+    </div>
+  </header>
+  
+  <div id="mobileMenu" class="mobile-menu" style="display:none"></div>
+
+  <main class="container">
+    
+    <section class="card animate-block" style="border-left: 5px solid var(--accent-orange); margin-bottom: 0;">
+      <h2 class="section">Fale Conosco</h2>
+      <p class="muted" style="margin-bottom: 0;">
+        Dúvidas, sugestões ou parcerias? Entre em contato com a central administrativa do Lascap Fire.
+        <br><small style="opacity: 0.7;">(Para emergências, utilize a aba Ocorrências ou ligue 193).</small>
+      </p>
+    </section>
+
+    <div class="contact-container">
+        
+        <div class="card animate-block delay-1" style="margin-bottom: 0;">
+            <h3 style="margin-bottom: 20px; font-size: 1.2rem;">Envie sua mensagem</h3>
+            
+            <form id="contactForm">
+                <div class="input-group">
+                    <i class="fa-solid fa-user" style="color:#0b5f8a"></i>
+                    <input type="text" id="ctNome" placeholder="Seu nome completo" required>
+                </div>
+
+                <div class="input-group">
+                    <i class="fa-solid fa-envelope" style="color:#ff6f00"></i>
+                    <input type="email" id="ctEmail" placeholder="Seu e-mail" required>
+                </div>
+
+                <div class="input-group">
+                    <i class="fa-solid fa-tag" style="color:#1ca66b"></i>
+                    <select id="ctAssunto" style="padding-left: 45px;">
+                        <option value="" disabled selected>Selecione o assunto</option>
+                        <option value="duvida">Dúvida sobre o App</option>
+                        <option value="parceria">Parceria Institucional</option>
+                        <option value="suporte">Suporte Técnico</option>
+                        <option value="outro">Outros</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <i class="fa-solid fa-comment" style="color:#666"></i>
+                    <textarea id="ctMsg" placeholder="Escreva sua mensagem aqui..." style="min-height: 120px;" required></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" id="btnSend" class="btn action" style="flex: 2;">
+                        <i class="fa-solid fa-paper-plane"></i> ENVIAR MENSAGEM
+                    </button>
+                    <button type="button" id="btnClear" class="btn secondary" style="flex: 1;">Limpar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="animate-block delay-1">
+            <div class="info-card">
+                <h3 style="color:var(--brand); margin-bottom: 25px;">Unidade Central</h3>
+                
+                <div class="info-item">
+                    <div class="info-icon-box"><i class="fa-solid fa-location-dot"></i></div>
+                    <div>
+                        <strong>Endereço</strong>
+                        <div class="muted" style="font-size: 0.9em;">Av. Cruz Cabugá, 1234 - Santo Amaro<br>Recife - PE</div>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon-box"><i class="fa-solid fa-phone"></i></div>
+                    <div>
+                        <strong>Telefone</strong>
+                        <div class="muted" style="font-size: 0.9em;">(81) 3182-9000</div>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon-box"><i class="fa-solid fa-envelope"></i></div>
+                    <div>
+                        <strong>E-mail Oficial</strong>
+                        <div class="muted" style="font-size: 0.9em;">contato@lascapfire.pe.gov.br</div>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon-box"><i class="fa-solid fa-clock"></i></div>
+                    <div>
+                        <strong>Horário de Atendimento</strong>
+                        <div class="muted" style="font-size: 0.9em;">Seg a Sex: 08:00 às 17:00</div>
+                    </div>
+                </div>
+
+                <div class="map-placeholder">
+                    <i class="fa-solid fa-location-dot map-pin"></i>
+                    <div style="position: absolute; bottom: 10px; background: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #333;">Sede CBMPE</div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+      <p>© 2025 Lascap Fire - Serviço de Ocorrências</p>
+      <p style="font-size: 11px; opacity: 0.7;">Conectando você à segurança.</p>
+  </footer>
+
+  <script src="script/shared.js"></script>
+  <script type="module" src="script/contato.js"></script>
+</body>
+</html>

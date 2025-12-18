@@ -1,0 +1,297 @@
+/* ==================== style/admin.css ==================== */
+
+/* Reset básico */
+* { box-sizing: border-box; }
+
+/* 1. Fundo da Página */
+body.login-page {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    /* Gradiente sutil */
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* Container flexível */
+.login-container {
+    width: 100%;
+    padding: 15px; /* Margem de segurança para não colar na borda */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 2. O Cartão de Login (Mais compacto) */
+.login-card {
+    background: #ffffff;
+    width: 100%;
+    max-width: 380px; /* Reduzido levemente para ficar mais elegante */
+    padding: 30px 25px; /* Padding vertical reduzido */
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    position: relative;
+    border-top: 4px solid #0b5f8a;
+}
+
+/* 3. Cabeçalho */
+.header-login {
+    margin-bottom: 20px; /* Reduzido de 30px */
+}
+
+.login-logo {
+    width: 60px; /* Reduzido de 70px */
+    height: auto;
+    margin-bottom: 10px;
+}
+
+.header-login h1 {
+    color: #0b5f8a;
+    margin: 0;
+    font-size: 1.4rem; /* Fonte levemente menor */
+    font-weight: 800;
+}
+
+.header-login p {
+    color: #7f8c8d;
+    margin: 5px 0 0;
+    font-size: 0.9rem;
+}
+
+/* 4. Inputs Compactos */
+.input-wrapper {
+    margin-bottom: 15px; /* Reduzido de 20px */
+    text-align: left;
+}
+
+.input-wrapper label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #34495e;
+    font-size: 0.85rem;
+    margin-left: 2px;
+}
+
+.input-icon-group {
+    position: relative;
+    width: 100%;
+}
+
+/* Ícones */
+.input-icon-group i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #0b5f8a;
+    font-size: 16px;
+    pointer-events: none;
+    z-index: 10;
+    transition: color 0.3s;
+}
+
+/* Inputs */
+.input-icon-group input {
+    width: 100%;
+    height: 44px; /* Altura reduzida para ganhar espaço */
+    padding: 0 15px 0 42px; /* Espaço ajustado para o ícone */
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background-color: #fcfcfc;
+    transition: all 0.2s ease;
+    color: #333;
+}
+
+.input-icon-group input:focus {
+    border-color: #0b5f8a;
+    background-color: #fff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(11, 95, 138, 0.1);
+}
+
+/* Efeito: Ícone muda de cor ao focar no input */
+.input-icon-group input:focus + i,
+.input-icon-group:focus-within i {
+    color: #c0392b; /* Detalhe visual bacana */
+}
+
+/* 5. Botão de Login */
+.btn-login {
+    width: 100%;
+    height: 44px;
+    background-color: #c0392b;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(192, 57, 43, 0.2);
+}
+
+.btn-login:hover {
+    background-color: #a93226;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(192, 57, 43, 0.3);
+}
+
+.btn-login:active {
+    transform: translateY(0);
+    transform: scale(0.98); /* Sensação de clique físico */
+}
+
+/* 6. Links Interativos (A MELHORIA ESTÁ AQUI) */
+.login-footer {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85rem;
+}
+
+/* Estilo para links parecerem botões sutis */
+.footer-link {
+    color: #0b5f8a;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px; /* Borda arredondada */
+    transition: all 0.2s ease;
+    background-color: transparent;
+}
+
+.footer-link:hover {
+    background-color: rgba(11, 95, 138, 0.1); /* Fundo azul bem clarinho */
+    color: #084a6c;
+}
+
+.footer-link:active {
+    transform: scale(0.95); /* Clique sutil */
+    background-color: rgba(11, 95, 138, 0.2);
+}
+
+.dot {
+    color: #ccc;
+    font-size: 0.8rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 25px;
+    color: #7f8c8d;
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.back-link:hover {
+    color: #333;
+    background-color: rgba(0,0,0,0.05);
+}
+
+/* ==================== RESPONSIVIDADE ==================== */
+@media (max-width: 480px) {
+    body.login-page {
+        background: #fff;
+        align-items: flex-start;
+    }
+    
+    .login-container {
+        padding: 0;
+        height: 100vh;
+    }
+
+    .login-card {
+        box-shadow: none;
+        border-radius: 0;
+        border-top: none;
+        padding: 20px;
+        max-width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .btn-login {
+        height: 50px; /* No mobile, botão maior é melhor */
+        font-size: 1rem;
+    }
+    
+    .input-icon-group input {
+        height: 50px; /* No mobile, input maior é melhor */
+    }
+}
+
+/* ==================== BOTÃO GOOGLE (Novo Estilo) ==================== */
+.btn-google-login {
+    width: 100%;
+    height: 44px;
+    background-color: #ffffff;
+    color: #555;
+    font-size: 0.95rem;
+    font-weight: 600;
+    
+    /* Bordas e Layout */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    
+    /* Centralização */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Animação suave */
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Sombra inicial discreta */
+}
+
+/* O Ícone do Google */
+.btn-google-login img {
+    width: 20px;
+    height: 20px;
+    pointer-events: none; /* Garante que o clique passe pelo ícone */
+}
+
+/* --- A MÁGICA (HOVER - PC) --- */
+/* Quando passar o mouse, ele sobe e a sombra aumenta */
+.btn-google-login:hover {
+    transform: translateY(-3px); /* Sobe 3 pixels */
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15); /* Sombra cresce */
+    background-color: #f9f9f9;
+    border-color: #ccc;
+}
+
+/* --- A MÁGICA (ACTIVE - CLIQUE) --- */
+/* Quando clicar, ele desce um pouco (efeito tátil) */
+.btn-google-login:active {
+    transform: translateY(-1px); /* Desce quase tudo */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background-color: #f0f0f0;
+}
+
+/* Ajuste Mobile: Remove hover excessivo mas mantém o clique */
+@media (max-width: 480px) {
+    .btn-google-login {
+        height: 50px; /* Botão maior para o dedo */
+    }
+}
