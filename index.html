@@ -15,85 +15,6 @@
 
   <meta name="theme-color" content="#0b5f8a">
   
-  <style>
-    /* ================= AJUSTES VISUAIS PREMIUM DA HOME ================= */
-    body { padding-top: 0; scroll-behavior: smooth; }
-    
-    /* --- BÔNUS 1: Animação de Entrada da Página (Fade In) --- */
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    main.container {
-        animation: fadeInUp 0.8s ease-out forwards;
-    }
-
-    /* --- Ajustes do Hero Section --- */
-    .hero-container {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 20px; padding: 10px;
-    }
-    .hero-text { flex: 1; }
-    .hero-img { flex: 0 0 200px; display: flex; justify-content: center; }
-    .hero-img img {
-      width: 100%; max-width: 180px; border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 4px solid #fff;
-    }
-
-    /* --- BÔNUS 2: Botões do Hero "Saltitantes" --- */
-    .hero-buttons .btn {
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .hero-buttons .btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 7px 14px rgba(0,0,0,0.15);
-    }
-
-    /* --- PEDIDO PRINCIPAL: Cards de Serviços "Vivos" --- */
-    .services-grid {
-        display: grid; grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
-        gap: 20px; margin-top: 15px;
-    }
-    
-    .service-card {
-        text-align: center;
-        /* A mágica acontece aqui: transição suave para tudo */
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        cursor: default; /* Ou pointer se fossem links */
-        border: 1px solid transparent; /* Prepara para a borda colorida */
-    }
-
-    /* Estado de Hover (Mouse) e Active (Toque no Mobile) */
-    .service-card:hover, .service-card:active {
-        /* Levanta um pouco e aumenta 3% */
-        transform: translateY(-8px) scale(1.03);
-        /* Sombra mais profunda e difusa para dar profundidade */
-        box-shadow: 0 15px 30px rgba(11, 95, 138, 0.15);
-        /* Borda sutil da cor da marca */
-        border-color: rgba(11, 95, 138, 0.2);
-        z-index: 2; /* Garante que fique por cima dos outros */
-    }
-    
-    .service-icon {
-        font-size: 36px; margin-bottom: 15px; display: block;
-        transition: transform 0.3s ease;
-    }
-    /* O ícone salta um pouco mais que o card */
-    .service-card:hover .service-icon {
-        transform: scale(1.1);
-    }
-
-    /* --- Responsividade --- */
-    @media (max-width: 768px) {
-      .hero-container { flex-direction: column-reverse; text-align: center; }
-      .hero-img { margin-bottom: 10px; }
-      .hero-img img { max-width: 120px; }
-      .hero-buttons { justify-content: center; }
-      /* No mobile, a animação é um pouco mais discreta para não atrapalhar o scroll */
-      .service-card:active { transform: translateY(-4px) scale(1.01); }
-    }
-  </style>
 </head>
 <body>
   
@@ -111,7 +32,7 @@
       <a href="servicos.html">Sobre</a>
       <a href="app.html">Ocorrências</a>
       <a href="contato.html">Contato</a>
-      <a href="ajuda.html">Ajuda</a>
+      <a href="ajuda.html">Suporte</a>
     </nav>
 
     <div class="actions">
@@ -133,7 +54,7 @@
                 Bem-vindo ao <strong>Lascap Fire</strong>. Registre ocorrências em tempo real e agilize o salvamento de vidas com nossa plataforma integrada.
             </p>
 
-            <div class="row hero-buttons" style="gap:15px">
+            <div class="hero-buttons" style="gap:15px">
               <a class="btn action" href="app.html" style="padding: 14px 24px; font-size: 15px;">
                   <i class="fa-solid fa-fire-extinguisher"></i> Registrar Ocorrência
               </a>
@@ -186,7 +107,6 @@
 
   <footer class="footer">
       <p>© 2025 Lascap Fire - Serviço de Ocorrências</p>
-      <p style="font-size: 11px; opacity: 0.7;">Tecnologia a serviço da vida.</p>
   </footer>
 
   <script>

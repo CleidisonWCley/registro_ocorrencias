@@ -1,0 +1,104 @@
+/* ================= ESTILOS ESPECÍFICOS DE PERFIL ================= */
+    
+    body {
+        display: flex; flex-direction: column; min-height: 100vh;
+        background-color: #f0f2f5;
+    }
+    main.container {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+    }
+
+    .profile-card-wrapper {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        width: 100%; max-width: 900px;
+        overflow: hidden;
+        display: flex;
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    /* --- LADO ESQUERDO (Visual) --- */
+    .profile-side-visual {
+        background: linear-gradient(135deg, #0b5f8a 0%, #063d5a 100%);
+        width: 35%;
+        padding: 40px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center;
+    }
+
+    .profile-side-visual h2, 
+    .profile-side-visual p {
+        color: #ffffff !important;
+    }
+
+    .profile-avatar-large {
+        font-size: 60px; margin-bottom: 20px;
+        background: rgba(255,255,255,0.1); width: 100px; height: 100px;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        border: 2px solid rgba(255,255,255,0.3);
+        color: #fff;
+    }
+
+    /* Botão Google com Hover Melhorado */
+    .btn-google-sidebar {
+        background: rgba(255,255,255,0.1); 
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+        width: 100%; padding: 12px; border-radius: 6px;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        font-weight: 600; font-size: 14px; cursor: pointer; 
+        transition: all 0.3s ease;
+        margin-top: 30px;
+    }
+    .btn-google-sidebar:hover {
+        background: rgba(255,255,255,0.25);
+        border-color: rgba(255,255,255,0.5);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    /* --- LADO DIREITO (Formulário) --- */
+    .profile-side-form {
+        width: 65%; padding: 40px;
+        display: flex; flex-direction: column; justify-content: center;
+    }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .full-width { grid-column: span 2; }
+
+    .input-compact { position: relative; margin-bottom: 12px; }
+    .input-compact input {
+        width: 100%; padding: 12px 12px 12px 40px;
+        border: 1px solid #ddd; border-radius: 6px;
+        font-size: 14px; transition: border 0.3s; box-sizing: border-box;
+    }
+    .input-compact i {
+        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+        color: #999; font-size: 14px;
+    }
+    .input-compact input:focus { border-color: var(--brand); outline: none; }
+    .input-compact input:focus + i { color: var(--brand); }
+
+    .tiny-label { font-size: 11px; font-weight: bold; color: #666; margin-bottom: 4px; display: block; }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- RESPONSIVIDADE (MOBILE) --- */
+    @media (max-width: 768px) {
+        .profile-card-wrapper { flex-direction: column; }
+        .profile-side-visual { 
+            width: 100%; padding: 25px 20px; 
+            flex-direction: row; justify-content: flex-start; gap: 15px; text-align: left;
+        }
+        .profile-avatar-large { width: 50px; height: 50px; font-size: 24px; margin-bottom: 0; }
+        .btn-google-sidebar { display: none; } 
+        
+        .profile-side-form { width: 100%; padding: 25px 20px; }
+        .form-grid { grid-template-columns: 1fr; gap: 0; }
+        .full-width { grid-column: span 1; }
+    }

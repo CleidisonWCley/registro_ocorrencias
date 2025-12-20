@@ -4,49 +4,77 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0" />
   <title>Lascap Fire - Meus Dados</title>
+  
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  
   <link rel="stylesheet" href="style/style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  
   <meta name="theme-color" content="#0b5f8a">
 </head>
-<body style="background-color: #f0f2f5;">
+<body class="centered-layout">
 
   <header class="header">
     <div class="brand">
         <img class="logo" src="icons/logo.png" alt="Logo">
-        <div><div>Lascap Fire</div><div style="font-size:11px;">Meus Dados</div></div>
+        <div>
+            <div style="text-transform: uppercase;">Lascap Fire</div>
+            <div style="font-size:11px;">Configurações</div>
+        </div>
     </div>
     <nav class="nav">
-        <a href="painel.html">Voltar ao Painel</a>
+        <a href="painel.html" style="font-size: 14px;"><i class="fa-solid fa-arrow-left"></i> Voltar ao Painel</a>
     </nav>
   </header>
 
-  <main class="container">
-    <div class="card" style="max-width: 500px; width: 100%;">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <div style="font-size: 50px; color: #0b5f8a;"><i class="fa-solid fa-user-pen"></i></div>
-            <h2>Editar Perfil</h2>
-            <p style="color:#666;">Mantenha seus dados atualizados.</p>
+  <main class="container centered-content">
+    
+    <div class="split-card-wrapper">
+        
+        <div class="split-side-visual">
+            <div class="split-icon-large">
+                <i class="fa-solid fa-user-pen"></i>
+            </div>
+            
+            <div>
+                <h2>Seu Perfil</h2>
+                <p>Mantenha seus dados de contato sempre atualizados para facilitar a comunicação da equipe.</p>
+            </div>
         </div>
 
-        <form id="formEditProfile">
-            <label>Nome Completo</label>
-            <input type="text" id="editNome" required>
+        <div class="split-side-form">
+            <h3 style="color:#333; margin-bottom:25px; text-align:center;">Editar Informações</h3>
 
-            <label>Telefone / WhatsApp</label>
-            <input type="tel" id="editTel" placeholder="(81) 9..." required>
+            <form id="formEditProfile">
+                
+                <div>
+                    <label>NOME COMPLETO</label>
+                    <input type="text" id="editNome" required>
+                </div>
 
-            <label>E-mail (Não editável)</label>
-            <input type="email" id="editEmail" disabled style="background: #eee; color: #888;">
+                <div>
+                    <label>TELEFONE / WHATSAPP</label>
+                    <input type="tel" id="editTel" placeholder="(81) 9..." required>
+                </div>
 
-            <label>Matrícula / Patente (Opcional)</label>
-            <input type="text" id="editPatente" placeholder="Ex: Cb. 12345">
+                <div>
+                    <label>E-MAIL (Não editável)</label>
+                    <input type="email" id="editEmail" disabled style="background: #f2f4f6; color: #888; border-color: #eee;">
+                </div>
 
-            <button type="submit" class="btn primary" style="width:100%; margin-top: 20px;">
-                <i class="fa-solid fa-floppy-disk"></i> SALVAR ALTERAÇÕES
-            </button>
-        </form>
+                <div>
+                    <label>MATRÍCULA / PATENTE (Opcional)</label>
+                    <input type="text" id="editPatente" placeholder="Ex: Cb. 12345">
+                </div>
+
+                <button type="submit" class="btn primary" style="width:100%; margin-top: 25px; padding: 14px;">
+                    <i class="fa-solid fa-floppy-disk"></i> SALVAR ALTERAÇÕES
+                </button>
+
+            </form>
+        </div>
     </div>
+
   </main>
 
   <script src="script/shared.js"></script>
@@ -99,10 +127,10 @@
                     patente: patInput.value
                 });
 
-                // AQUI MUDOU: Alerta bonito em vez de alert()
+                // Alerta bonito
                 showCustomAlert("Dados atualizados com sucesso!", "success");
                 
-                // Pequeno delay para o usuário ler a mensagem antes de voltar
+                // Delay para leitura
                 setTimeout(() => {
                     window.location.href = 'painel.html';
                 }, 1500);

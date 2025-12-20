@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if(btnLogout) {
         btnLogout.addEventListener('click', () => {
             showCustomConfirm("Deseja realmente sair do sistema?", (confirmed) => {
-                if(confirmed) signOut(auth).then(() => window.location.href = 'admin.html');
+                if(confirmed) signOut(auth).then(() => window.location.href = 'index.html');
             });
         });
     }

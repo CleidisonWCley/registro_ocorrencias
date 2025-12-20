@@ -1,0 +1,48 @@
+/* ================= ESTILOS ESPECÍFICOS DE OCORRÊNCIAS ================= */
+    body { padding-top: 0; }
+
+    /* Loading Overlay */
+    #loadingOverlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: #ffffff; z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 0.5s ease;
+    }
+    .loading-icon-box { position: relative; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+    .loading-icon-box i { font-size: 50px; color: #d9534f; animation: pulse-helmet 1.5s infinite; }
+    .loading-text { font-family: 'Inter', sans-serif; font-weight: 700; color: #0b5f8a; font-size: 1.2rem; letter-spacing: 1px; animation: fadeText 1.5s infinite; }
+    
+    @keyframes pulse-helmet { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes fadeText { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .occ-card { opacity: 0; transition: opacity 0.8s ease; }
+    .occ-card.visible { opacity: 1; }
+    
+    /* Botão Mic */
+    #btnMic.recording { animation: pulse-red 1.5s infinite; }
+    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(217, 83, 79, 0); } 100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); } }
+    
+    /* Leaflet Popup */
+    .leaflet-popup-content-wrapper { border-radius: 8px; }
+    .leaflet-popup-content { font-size: 13px; line-height: 1.4; margin: 10px; }
+    .popup-title { font-weight: 800; color: #0b5f8a; display: block; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom:4px;}
+    .popup-addr { color: #555; }
+
+    /* --- AUTOCOMPLETE DA BUSCA (NOVO) --- */
+    .search-wrapper { position: relative; flex: 1; } /* Container para posicionar a lista */
+    
+    .suggestions-list {
+        position: absolute; top: 100%; left: 0; right: 0;
+        background: white; border: 1px solid #ccc; border-top: none;
+        border-radius: 0 0 8px 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        z-index: 1000; max-height: 250px; overflow-y: auto;
+        display: none; /* Oculto por padrão */
+    }
+    
+    .suggestion-item {
+        padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+        font-size: 13px; color: #333; display: flex; align-items: center; gap: 8px;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:hover { background-color: #f0f7fa; color: #0b5f8a; }
+    .suggestion-item i { color: #ccc; font-size: 12px; }
