@@ -17,21 +17,20 @@
 </head>
 <body>
 
-  <header class="header">
-    <div class="brand">
+    <header class="header">
+    <a href="index.html" class="brand" style="text-decoration: none;">
         <img class="logo" src="icons/logo.png" alt="CBMPE logo">
         <div>
             <div style="text-transform: uppercase;">Lascap Fire</div>
             <div style="font-size:11px;color:rgba(255,255,255,0.9)">Sistema de Cadastro</div>
         </div>
-    </div>
-    <nav class="nav" role="navigation">
-      <a href="index.html">Início</a>
-      <a href="servicos.html" class="active">Sobre</a>
-      <a href="app.html">Ocorrências</a>
-      <a href="contato.html">Contato</a>
-      <a href="ajuda.html">Suporte</a>
-    </nav>
+    </a>
+
+    <div class="actions">
+      <a class="btn small" href="index.html" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);">
+        <i class="fa-solid fa-arrow-left"></i> Voltar
+      </a>
+      </div>
   </header>
 
   <main class="container">
@@ -122,5 +121,6 @@
  
   <script src="script/shared.js"></script>
   <script type="module" src="script/perfil.js"></script>
+  <script src="./script/install-sw.js"></script>
 </body>
 </html>

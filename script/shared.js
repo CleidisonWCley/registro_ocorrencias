@@ -128,3 +128,46 @@ function injectStyles() {
     document.head.appendChild(style);
   }
 }
+
+window.addEventListener('load', () => {
+    // 1. Cria o elemento HTML do aviso (uma barrinha no topo)
+    const offlineBanner = document.createElement('div');
+    offlineBanner.id = 'offline-banner';
+    offlineBanner.innerHTML = '<i class="fa-solid fa-wifi-slash"></i> Você está Offline. Dados serão salvos no dispositivo.';
+    
+    // Estilo da barrinha (CSS via JS pra ser rápido)
+    Object.assign(offlineBanner.style, {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '100%',
+        backgroundColor: '#d9534f', // Vermelho alerta
+        color: 'white',
+        textAlign: 'center',
+        padding: '10px',
+        fontSize: '14px',
+        zIndex: '9999',
+        display: 'none', // Começa escondido
+        boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+    });
+
+    document.body.appendChild(offlineBanner);
+
+    // 2. Função que liga/desliga o aviso
+    function updateNetworkStatus() {
+        if (navigator.onLine) {
+            offlineBanner.style.display = 'none'; // Tem net? Esconde.
+            console.log("🟢 Conexão restabelecida!");
+        } else {
+            offlineBanner.style.display = 'block'; // Sem net? Mostra.
+            console.log("🔴 Conexão perdida! Modo Offline.");
+        }
+    }
+
+    // 3. Ouve as mudanças de estado
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+
+    // Checa o status assim que carrega
+    updateNetworkStatus();
+});
