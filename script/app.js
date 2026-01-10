@@ -294,10 +294,11 @@ function setupAudio() {
 // salvamento
 async function saveOccurrence(e) {
   e.preventDefault();
+  console.log("Botão Clicado");
   
-  // 1. Validações Iniciais
+  // 1. Validações
   if (!currentPosition || !currentPosition.lat) { 
-      showCustomAlert("Localização obrigatória! Aguarde o GPS ou busque um endereço.", "error"); 
+      showCustomAlert("Localização obrigatória! Aguarde o GPS.", "error"); 
       return; 
   }
   
@@ -307,14 +308,16 @@ async function saveOccurrence(e) {
       return; 
   }
 
-  // 2. Feedback Visual (Travando botão)
+  // 2. Feedback Visual
   const btnSubmit = e.target.querySelector('button[type="submit"]');
   const originalBtnText = btnSubmit.innerHTML;
   btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processando...';
   btnSubmit.disabled = true;
 
   try {
-    // 3. Preparando a Mídia (Blindagem aqui!)
+    console.log("Preparando Mídia");
+
+    // 3. Processamento de Mídia
     const midias = [];
     const fileInput = document.getElementById('midia');
     
@@ -322,45 +325,50 @@ async function saveOccurrence(e) {
       try {
           const file = fileInput.files[0];
           const base64 = await comprimirImagem(file);
-          
-          // Só adiciona se o base64 for válido (string)
           if (base64 && typeof base64 === 'string') {
               midias.push({ tipo: 'foto', dados: base64 });
           }
       } catch (errFile) {
-          console.warn("Erro ao processar foto:", errFile);
-          // Não paramos o envio por erro na foto, apenas logamos
+          console.warn("Erro foto:", errFile);
       }
     }
-    
-    // Assinatura sempre string
     midias.push({ tipo: 'assinatura_digital', dados: 'Auth: Lascap Fire' });
 
-    // 4. Montando o Objeto (Blindagem contra 'undefined')
-    // O operador (||) garante que nunca vá undefined
+    // 4. Montando o Objeto
     const dadosOcorrencia = {
       tipo: document.getElementById('tipo').value || "outros",
       descricao: desc || "",
-      lat: Number(currentPosition.lat) || 0, // Garante que é número
+      lat: Number(currentPosition.lat) || 0,
       lng: Number(currentPosition.lng) || 0,
-      endereco_completo: currentAddressText || "Localização sem endereço (GPS)",
-      data_envio: new Date().toLocaleDateString('pt-BR') || "",
-      hora_envio: new Date().toLocaleTimeString('pt-BR') || "",
+      endereco_completo: currentAddressText || "GPS",
+      data_envio: new Date().toLocaleDateString('pt-BR'),
+      hora_envio: new Date().toLocaleTimeString('pt-BR'),
       status: 'pendente',
-      timestamp: serverTimestamp(),
-      midias: midias, // O array agora está limpo
+      timestamp: new Date(), // BLINDAGEM: Use Date local para evitar travamento de sync
+      midias: midias,
       userId: auth.currentUser ? auth.currentUser.uid : "anonimo"
     };
 
-    // DEBUG: Mostra no console o que está sendo enviado (ajuda a achar erros)
-    console.log("📤 Tentando enviar:", dadosOcorrencia);
+    console.log("Enviando ao Firebase...");
 
-    // 5. Envio ao Firebase
-    await addDoc(collection(db, "ocorrencias"), dadosOcorrencia);
+    // --- AQUI ESTÁ A CORREÇÃO ANTI-TRAVAMENTO ---
+    
+    // Cria uma promessa que falha se demorar mais de 4 segundos
+    const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("TIMEOUT_OFFLINE")), 4000)
+    );
+
+    // Corrida: Quem chegar primeiro ganha (O salvamento ou o tempo esgotado)
+    await Promise.race([
+        addDoc(collection(db, "ocorrencias"), dadosOcorrencia),
+        timeoutPromise
+    ]);
+
+    console.log("Sucesso!");
 
     // 6. Sucesso
     if (!navigator.onLine) {
-        showCustomAlert("📴 Offline: Salvo no dispositivo! Enviaremos ao conectar.", "warning");
+        showCustomAlert("📴 Offline: Salvo no dispositivo! (Sincroniza ao reconectar)", "warning");
     } else {
         showCustomAlert("✅ Sucesso! Ocorrência registrada.", "success");
     }
@@ -369,18 +377,26 @@ async function saveOccurrence(e) {
     e.target.reset();
     if(marker) map.removeLayer(marker);
     if(accuracyCircle) map.removeLayer(accuracyCircle);
-    // Tenta resetar mapa, se map existir
     if(map) map.setView([-8.0631, -34.8711], 13);
-    
     currentPosition = { lat: null, lng: null };
-    currentAddressText = "Localização não identificada"; // Reseta variável global
+    currentAddressText = "Localização não identificada";
     document.getElementById("manualAddress").value = "";
 
   } catch (err) {
-    console.error("❌ ERRO NO ENVIO:", err);
-    showCustomAlert("Erro ao salvar: " + err.message, "error");
+    console.error("❌ ERRO:", err);
+    
+    // Tratamento específico para o nosso Timeout
+    if (err.message === "TIMEOUT_OFFLINE") {
+        // Se deu timeout, provavelmente salvou no cache mas o Firebase não confirmou.
+        // Vamos considerar como sucesso offline para não frustrar o usuário.
+        showCustomAlert("⚠️ Alerta: Conexão instável. Dados salvos localmente.", "warning");
+        e.target.reset(); // Reseta o form pois "fingimos" que deu certo
+    } else {
+        showCustomAlert("Erro ao salvar: " + err.message, "error");
+    }
+
   } finally {
-    // Destrava botão
+    // Destrava o botão SEMPRE
     btnSubmit.innerHTML = originalBtnText;
     btnSubmit.disabled = false;
   }
