@@ -214,96 +214,175 @@ function updatePopupContent(title, address) {
     }
 }
 
+// função de nomes para os endereços online e offline com latitudades e longitudes
 async function getAddress(lat, lng) {
+    // Se estiver offline, nem tenta o fetch para não dar erro no console
+    if (!navigator.onLine) {
+        currentAddressText = `📍 Localização Offline: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        // Opcional: Avisar visualmente no input manual
+        const manualInput = document.getElementById("manualAddress");
+        if(manualInput && manualInput.value === "") manualInput.value = "Sem internet: Coordenadas salvas.";
+        return;
+    }
+
     try {
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
         const data = await response.json();
         if (data && data.address) {
-            const rua = data.address.road || data.address.pedestrian || "Via não identificada";
+            const rua = data.address.road || data.address.pedestrian || "Rua não identificada";
             const bairro = data.address.suburb || data.address.neighbourhood || "";
             const num = data.address.house_number ? `, ${data.address.house_number}` : "";
             const cidade = data.address.city || data.address.town || "";
-            const cep = data.address.postcode ? ` - CEP: ${data.address.postcode}` : "";
-            currentAddressText = `${rua}${num}, ${bairro} - ${cidade}${cep}`;
+            
+            currentAddressText = `${rua}${num}, ${bairro} - ${cidade}`;
         } else {
             currentAddressText = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
         }
-    } catch (e) { currentAddressText = "Endereço indisponível"; }
+    } catch (e) { 
+        // Fallback caso o fetch falhe mesmo com internet (ex: timeout)
+        currentAddressText = `📍 GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)} (Erro na busca)`; 
+    }
 }
 
+// função de audio 
 function setupAudio() {
   const btn = document.getElementById('btnMic');
   const txt = document.getElementById('descricao');
   const status = document.getElementById('micStatus');
   const icon = btn.querySelector('i');
   
+  // Verifica suporte
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  
   if (!SpeechRecognition) { btn.style.display = 'none'; return; }
   
   recognition = new SpeechRecognition();
   recognition.lang = 'pt-BR';
-  recognition.continuous = true;
+  recognition.continuous = false; // MUDANÇA: False evita bugs de repetição no Android
   recognition.interimResults = false;
 
-  recognition.onstart = () => { status.style.display = 'block'; status.innerText = "Gravando..."; btn.classList.add('recording'); icon.className = 'fa-solid fa-stop'; };
-  recognition.onend = () => { status.style.display = 'none'; btn.classList.remove('recording'); icon.className = 'fa-solid fa-microphone'; };
-  recognition.onresult = (e) => { 
-      let finalTranscript = '';
-      for (let i = e.resultIndex; i < e.results.length; ++i) {
-        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript;
-      }
-      if(finalTranscript) txt.value += (txt.value ? " " : "") + finalTranscript;
+  recognition.onstart = () => { 
+      status.style.display = 'block'; 
+      status.innerText = "Pode falar..."; 
+      btn.classList.add('recording'); 
+      icon.className = 'fa-solid fa-ear-listen fa-beat'; // Feedback visual melhor
   };
   
-  btn.addEventListener('click', () => { if (btn.classList.contains('recording')) recognition.stop(); else recognition.start(); });
+  recognition.onend = () => { 
+      status.style.display = 'none'; 
+      btn.classList.remove('recording'); 
+      icon.className = 'fa-solid fa-microphone'; 
+  };
+  
+  recognition.onresult = (e) => { 
+      const transcript = e.results[0][0].transcript;
+      // Adiciona espaço apenas se já tiver texto
+      txt.value += (txt.value.length > 0 ? " " : "") + transcript;
+  };
+
+  recognition.onerror = (event) => {
+      console.log("Erro no reconhecimento de voz:", event.error);
+      status.innerText = "Erro. Tente novamente.";
+      setTimeout(() => status.style.display = 'none', 2000);
+  };
+  
+  btn.addEventListener('click', () => { 
+      if (btn.classList.contains('recording')) recognition.stop(); 
+      else recognition.start(); 
+  });
 }
 
+// salvamento
 async function saveOccurrence(e) {
   e.preventDefault();
-  if (!currentPosition.lat) { showCustomAlert("Localização obrigatória!", "error"); return; }
-  if (document.getElementById('descricao').value.trim() === "") { showCustomAlert("Descreva a ocorrência.", "info"); return; }
-
-  showCustomAlert("Enviando...", "info");
   
+  // 1. Validações Iniciais
+  if (!currentPosition || !currentPosition.lat) { 
+      showCustomAlert("Localização obrigatória! Aguarde o GPS ou busque um endereço.", "error"); 
+      return; 
+  }
+  
+  const desc = document.getElementById('descricao').value;
+  if (!desc || desc.trim() === "") { 
+      showCustomAlert("Por favor, descreva a ocorrência.", "info"); 
+      return; 
+  }
+
+  // 2. Feedback Visual (Travando botão)
+  const btnSubmit = e.target.querySelector('button[type="submit"]');
+  const originalBtnText = btnSubmit.innerHTML;
+  btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processando...';
+  btnSubmit.disabled = true;
+
   try {
+    // 3. Preparando a Mídia (Blindagem aqui!)
     const midias = [];
     const fileInput = document.getElementById('midia');
-    if (fileInput.files.length > 0) {
-      const file = fileInput.files[0];
-      const base64 = await fileToBase64(file);
-      midias.push({ tipo: 'foto', dados: base64 });
+    
+    if (fileInput && fileInput.files.length > 0) {
+      try {
+          const file = fileInput.files[0];
+          const base64 = await comprimirImagem(file);
+          
+          // Só adiciona se o base64 for válido (string)
+          if (base64 && typeof base64 === 'string') {
+              midias.push({ tipo: 'foto', dados: base64 });
+          }
+      } catch (errFile) {
+          console.warn("Erro ao processar foto:", errFile);
+          // Não paramos o envio por erro na foto, apenas logamos
+      }
     }
-    midias.push({ tipo: 'assinatura_digital', dados: 'Auth: Lascap Fire - ' + new Date().toISOString() });
+    
+    // Assinatura sempre string
+    midias.push({ tipo: 'assinatura_digital', dados: 'Auth: Lascap Fire' });
 
-    const now = new Date();
-    const dataBrasil = now.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-    const horaBrasil = now.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-
-    await addDoc(collection(db, "ocorrencias"), {
-      tipo: document.getElementById('tipo').value,
-      descricao: document.getElementById('descricao').value,
-      lat: currentPosition.lat,
-      lng: currentPosition.lng,
-      endereco_completo: currentAddressText,
-      data_envio: dataBrasil,
-      hora_envio: horaBrasil,
+    // 4. Montando o Objeto (Blindagem contra 'undefined')
+    // O operador (||) garante que nunca vá undefined
+    const dadosOcorrencia = {
+      tipo: document.getElementById('tipo').value || "outros",
+      descricao: desc || "",
+      lat: Number(currentPosition.lat) || 0, // Garante que é número
+      lng: Number(currentPosition.lng) || 0,
+      endereco_completo: currentAddressText || "Localização sem endereço (GPS)",
+      data_envio: new Date().toLocaleDateString('pt-BR') || "",
+      hora_envio: new Date().toLocaleTimeString('pt-BR') || "",
       status: 'pendente',
       timestamp: serverTimestamp(),
-      midias: midias,
+      midias: midias, // O array agora está limpo
       userId: auth.currentUser ? auth.currentUser.uid : "anonimo"
-    });
+    };
 
-    showCustomAlert("Sucesso! Ocorrência enviada.", "success");
+    // DEBUG: Mostra no console o que está sendo enviado (ajuda a achar erros)
+    console.log("📤 Tentando enviar:", dadosOcorrencia);
+
+    // 5. Envio ao Firebase
+    await addDoc(collection(db, "ocorrencias"), dadosOcorrencia);
+
+    // 6. Sucesso
+    if (!navigator.onLine) {
+        showCustomAlert("📴 Offline: Salvo no dispositivo! Enviaremos ao conectar.", "warning");
+    } else {
+        showCustomAlert("✅ Sucesso! Ocorrência registrada.", "success");
+    }
+
+    // Reset
     e.target.reset();
     if(marker) map.removeLayer(marker);
     if(accuracyCircle) map.removeLayer(accuracyCircle);
-    map.setView([-8.0631, -34.8711], 13);
+    // Tenta resetar mapa, se map existir
+    if(map) map.setView([-8.0631, -34.8711], 13);
+    
     currentPosition = { lat: null, lng: null };
+    currentAddressText = "Localização não identificada"; // Reseta variável global
     document.getElementById("manualAddress").value = "";
+
   } catch (err) {
-    console.error(err);
-    showCustomAlert("Erro ao salvar.", "error");
+    console.error("❌ ERRO NO ENVIO:", err);
+    showCustomAlert("Erro ao salvar: " + err.message, "error");
+  } finally {
+    // Destrava botão
+    btnSubmit.innerHTML = originalBtnText;
+    btnSubmit.disabled = false;
   }
 }
 
@@ -325,4 +404,40 @@ function showCustomAlert(msg, type) {
   header.className = 'custom-alert-header ' + (type === 'success' ? 'success' : (type === 'error' ? 'error' : ''));
   header.innerText = type === 'success' ? 'Sucesso' : (type === 'error' ? 'Erro' : 'Informação');
   el.style.display = 'flex';
+}
+
+// Função para reduzir a imagem antes de salvar (Essencial para o Firebase!)
+function comprimirImagem(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Redimensiona para no máximo 800px (mantendo proporção)
+                const maxWidth = 800;
+                const scaleSize = maxWidth / img.width;
+                const newWidth = (img.width > maxWidth) ? maxWidth : img.width;
+                const newHeight = (img.width > maxWidth) ? (img.height * scaleSize) : img.height;
+
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+
+                ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                
+                // Converte para JPEG com 70% de qualidade (String Base64 limpa)
+                resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+            };
+            
+            img.onerror = (err) => reject(err);
+        };
+        
+        reader.onerror = (err) => reject(err);
+    });
 }

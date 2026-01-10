@@ -42,7 +42,12 @@ const FILES_TO_CACHE = [
   "./icons/favicon-32x32.png",
   "./icons/favicon.ico",    
   "./icons/G.png",
-  "./icons/logo.png"
+  "./icons/logo.png",
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+  "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
 ];
 
 // 1. Instalação: Baixa os arquivos

@@ -268,23 +268,46 @@ window.editOcc = (id) => {
     document.getElementById('stampHash').innerText = fakeHash;
     document.getElementById('stampDate').innerText = `${occ.data_envio} às ${occ.hora_envio}`;
 
-    // Mídia
     const preview = document.getElementById('media-preview');
     preview.innerHTML = "";
     let midiaValidaEncontrada = false;
 
     if (occ.midias && Array.isArray(occ.midias)) {
         occ.midias.forEach(m => {
-            if (m.dados && (m.dados.startsWith('data:image') || m.dados.startsWith('http'))) {
-                midiaValidaEncontrada = true;
-                if (!m.tipo || m.tipo.startsWith('image')) {
-                    const img = document.createElement('img'); img.src = m.dados; preview.appendChild(img);
-                } else if (m.tipo && m.tipo.startsWith('video')) {
-                    const vid = document.createElement('video'); vid.src = m.dados; vid.controls = true; vid.style.maxWidth = "100%"; preview.appendChild(vid);
+            if (m.dados) {
+                // AGORA ACEITA 'foto' E 'image'
+                const isImage = m.tipo === 'foto' || 
+                                (m.tipo && m.tipo.startsWith('image')) || 
+                                m.dados.startsWith('data:image');
+
+                if (isImage) {
+                    midiaValidaEncontrada = true;
+                    const img = document.createElement('img');
+                    img.src = m.dados;
+                    
+                    // Estilo para a foto ficar bonita no modal
+                    img.style.width = "100%";
+                    img.style.maxWidth = "400px"; // Não deixa ficar gigante
+                    img.style.borderRadius = "8px";
+                    img.style.marginTop = "10px";
+                    img.style.border = "1px solid #ccc";
+                    img.alt = "Evidência da Ocorrência";
+                    
+                    preview.appendChild(img);
+                } 
+                // Mantemos a lógica de vídeo caso você decida usar no futuro
+                else if (m.tipo && m.tipo.startsWith('video')) {
+                    midiaValidaEncontrada = true;
+                    const vid = document.createElement('video'); 
+                    vid.src = m.dados; 
+                    vid.controls = true; 
+                    vid.style.maxWidth = "100%"; 
+                    preview.appendChild(vid);
                 }
             }
         });
     }
+
     if (!midiaValidaEncontrada) {
         preview.innerHTML = "<div class='no-media-box'><i class='fa-regular fa-image' style='font-size:24px; opacity:0.5'></i><br>Sem mídia visual.</div>";
     }
