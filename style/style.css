@@ -3,7 +3,7 @@
 =========================================*/
 
 /* ------------------ */
-/* 1. Tokens institucionais */
+/* Tokens institucionais */
 :root {
   --brand: #0b5f8a;           /* Azul Institucional */
   --brand-contrast: #ffffff;
@@ -21,14 +21,14 @@
 }
 
 /* ------------------ */
-/* 2. Reset e Base */
+/* Reset e Base */
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;font-family:Inter,Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:#111}
 a{color:inherit;text-decoration:none}
 .container{max-width:var(--max-width);margin:18px auto;padding:12px}
 
 /* ------------------ */
-/* 3. Header / Navbar */
+/* Header / Navbar */
 .header {
   background: var(--brand);
   color: var(--brand-contrast);
@@ -90,7 +90,7 @@ a{color:inherit;text-decoration:none}
 }
 
 /* ------------------ */
-/* 4. Componentes Gerais */
+/* Componentes Gerais */
 .card { background: var(--card-bg); padding: 20px; border-radius: var(--radius); border: 1px solid #e1e4e8; box-shadow: var(--shadow); margin-bottom: 16px; }
 h1,h2,h3{color:var(--brand);margin:0 0 12px 0;font-weight:700}
 h2{border-bottom:2px solid var(--danger);padding-bottom:8px;margin-bottom:20px}
@@ -108,7 +108,7 @@ h2{border-bottom:2px solid var(--danger);padding-bottom:8px;margin-bottom:20px}
 .footer{padding:24px;text-align:center;color:var(--muted);border-top:1px solid #e6e9ec;margin-top:30px;font-size: 0.9em; background: #fff;}
 
 /* ------------------ */
-/* 5. Estilos Específicos por Página */
+/* Estilos Específicos por Página */
 
 /* --- APP (Ocorrências) --- */
 .desc-wrapper { position: relative; }
@@ -189,7 +189,7 @@ main.container { animation: fadeInUp 0.8s ease-out forwards; }
 .service-card:hover .service-icon { transform: scale(1.1); }
 
 /* ------------------ */
-/* 6. Formulários Globais (Login, Perfil, Contato) */
+/* Formulários Globais (Login, Perfil, Contato) */
 label { display: block; margin-bottom: 6px; font-weight: 700; color: #0b5f8a !important; font-size: 14px; margin-top: 15px; }
 label:first-child { margin-top: 0; }
 input[type="text"], input[type="email"], input[type="tel"], input[type="password"], input[type="date"], select, textarea {
@@ -199,7 +199,7 @@ input:focus, select:focus, textarea:focus { border-color: #0b5f8a; outline: none
 input:disabled, textarea:disabled { background-color: #f2f4f6; color: #666; border-color: #dbe0e4; cursor: not-allowed; }
 
 /* ------------------ */
-/* 7. Layout de Cartão Dividido (Login/Perfil/Minha Conta) */
+/* Layout de Cartão Dividido (Login/Perfil/Minha Conta) */
 body.centered-layout { display: flex; flex-direction: column; min-height: 100vh; }
 main.centered-content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .split-card-wrapper { background: #fff; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 900px; overflow: hidden; display: flex; animation: fadeInUp 0.6s ease-out; }
@@ -210,68 +210,6 @@ main.centered-content { flex: 1; display: flex; align-items: center; justify-con
 .split-side-form { width: 60%; padding: 50px; display: flex; flex-direction: column; justify-content: center; }
 .btn-google-split { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; width: 100%; padding: 12px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; margin-top: 30px; transition: 0.3s; font-weight: 600; font-size: 14px; }
 .btn-google-split:hover { background: rgba(255,255,255,0.2); }
-
-/* ==========================================================================
-   8. RESPONSIVIDADE GLOBAL (FINAL E UNIFICADA)
-   ========================================================================== */
-@media (max-width: 768px) {
-    
-    /* CABEÇALHO (Header) */
-    .header {
-        padding: 10px 15px;
-        gap: 10px;
-    }
-
-    /* Esconde o subtítulo "Sistema de Ocorrências" para dar espaço */
-    .brand div div:last-child { 
-        display: none; 
-    }
-    
-    /* Esconde o e-mail (já estava no seu, mantive) */
-    .user-email-display { display: none !important; }
-
-    /* FORÇA os botões a ficarem lado a lado */
-    .header .actions {
-        display: flex !important;
-        flex-direction: row !important; /* O segredo está aqui */
-        align-items: center;
-        gap: 8px !important;
-    }
-
-    /* Estilo dos botões no mobile (Icon Only) */
-    .header .actions .btn {
-        padding: 0 !important;
-        width: 38px !important;
-        height: 38px !important;
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-        font-size: 0 !important; /* Esconde qualquer texto que tenha sobrado */
-    }
-    
-    /* Garante que o ícone fique visível e centralizado */
-    .header .actions .btn i {
-        margin: 0 !important;
-        font-size: 16px !important;
-        display: block !important;
-    }
-    
-    /* Remove span se houver */
-    .header .actions .btn span { display: none !important; }
-
-    /* Home / Index (Mantido do seu original) --- */
-    .hero-container { flex-direction: column-reverse !important; text-align: center; }
-    .hero-img { margin-bottom: 15px; }
-    .hero-buttons { display: flex !important; flex-direction: column !important; width: 100% !important; gap: 15px !important; margin-top: 20px; }
-    .hero-buttons .btn { width: 100% !important; display: flex; justify-content: center; align-items: center; padding: 15px !important; margin: 0 !important; }
-
-    /* Layout Split Card (Mantido do seu original) --- */
-    .split-card-wrapper { flex-direction: column; max-height: none; }
-    .split-side-visual { width: 100%; padding: 30px 20px; flex-direction: row; justify-content: flex-start; gap: 15px; text-align: left; }
-    .split-icon-large { width: 60px; height: 60px; font-size: 24px; margin: 0; }
-    .btn-google-split { display: none; }
-    .split-side-form { width: 100%; padding: 30px 20px; }
-}
 
 /* =========================================
    BANNER DE INSTALAÇÃO PWA (Via Shared.js)
@@ -343,4 +281,96 @@ main.centered-content { flex: 1; display: flex; align-items: center; justify-con
 @keyframes slideUp {
     from { transform: translate(-50%, 100px); opacity: 0; }
     to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* ==========================================================
+   LAYOUT MOBILE: TEXTOS VISÍVEIS E ALINHAMENTO LINEAR
+   ========================================================== */
+@media (max-width: 768px) {
+
+    /* 1. CABEÇALHO (Header) - Container Flexível */
+    .header {
+        padding: 5px 10px; /* Padding fino para ganhar pixels */
+        height: 60px;
+        justify-content: space-between;
+        gap: 5px;
+    }
+
+    /* 2. LOGO E TÍTULO (Ficam menores para dar espaço aos botões) */
+    .brand {
+        flex-shrink: 1; /* Permite encolher se necessário */
+        min-width: 0;   /* Permite que o texto corte se for muito longo */
+        gap: 8px;
+    }
+
+    .brand img.logo {
+        width: 38px; /* Logo discreta */
+        height: 38px;
+    }
+
+    .brand div div:first-child {
+        font-size: 13px !important; /* Fonte do título menor */
+        white-space: nowrap;
+    }
+
+    /* ESCONDE O SUBTÍTULO ("Sistema de Ocorrências") NO CELULAR */
+    /* Isso é o segredo para liberar espaço para os botões de ação */
+    .brand div div:last-child {
+        display: none !important;
+    }
+    
+    /* Esconde o e-mail (necessário no painel) */
+    .user-email-display { display: none !important; }
+
+    /* 3. BOTÕES DE AÇÃO (Linear e com Texto) */
+    .header .actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center;
+        gap: 6px !important; /* Espaço pequeno entre botões */
+        flex-shrink: 0; /* Garante que os botões NÃO encolham */
+    }
+
+    .header .actions .btn {
+        width: auto !important;
+        padding: 6px 10px !important; /* Padding confortável */
+        height: 34px !important;
+        font-size: 11px !important; /* Texto pequeno mas legível */
+        display: flex !important;
+        align-items: center;
+        gap: 5px; /* Distância ícone-texto */
+        white-space: nowrap; /* Não deixa o texto quebrar linha */
+    }
+
+    /* Ícones dentro dos botões */
+    .header .actions .btn i {
+        font-size: 12px !important;
+        margin: 0 !important;
+        display: block !important;
+    }
+
+    /* GARANTE QUE O TEXTO APAREÇA */
+    .header .actions .btn span {
+        display: inline-block !important;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    /* Ajuste do Botão Menu (Hambúrguer) */
+    .menu-toggle {
+        font-size: 22px;
+        padding: 0 0 0 5px;
+        margin: 0;
+    }
+
+    /* --- RESTO DOS ESTILOS MOBILE (MANTIDOS) --- */
+    .hero-container { flex-direction: column-reverse !important; text-align: center; }
+    .hero-img { margin-bottom: 15px; }
+    .hero-buttons { display: flex !important; flex-direction: column !important; width: 100% !important; gap: 15px !important; margin-top: 20px; }
+    .hero-buttons .btn { width: 100% !important; display: flex; justify-content: center; align-items: center; padding: 15px !important; margin: 0 !important; }
+    .split-card-wrapper { flex-direction: column; max-height: none; }
+    .split-side-visual { width: 100%; padding: 30px 20px; flex-direction: row; justify-content: flex-start; gap: 15px; text-align: left; }
+    .split-icon-large { width: 60px; height: 60px; font-size: 24px; margin: 0; }
+    .btn-google-split { display: none; }
+    .split-side-form { width: 100%; padding: 30px 20px; }
 }
