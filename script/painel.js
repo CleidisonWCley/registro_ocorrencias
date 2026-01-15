@@ -1,4 +1,4 @@
-// ==================== script/painel.js  ====================
+// ==================== script/painel.js (VERSÃO FINAL: NOTIFICAÇÕES RICAS + CEP) ====================
 
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
@@ -17,6 +17,14 @@ const { jsPDF } = window.jspdf;
 
 // --- INICIALIZAÇÃO ---
 document.addEventListener("DOMContentLoaded", () => {
+    
+    // 1. PEDIR PERMISSÃO PARA NOTIFICAÇÕES
+    if ("Notification" in window) {
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
+    }
+
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             const emailDisplay = document.getElementById('userEmailDisplay');
@@ -56,32 +64,67 @@ function initMap() {
     markersLayer = L.layerGroup().addTo(map);
 }
 
-// --- FIREBASE REAL-TIME ---
+// --- FIREBASE REAL-TIME (COM DETECÇÃO DE NOVIDADE) ---
 function listenToOccurrences() {
     const q = query(collection(db, "ocorrencias"), orderBy("timestamp", "desc"));
 
     onSnapshot(q, (snapshot) => {
         const newOccurrences = [];
-        let hasNewPending = false;
+        let novaOcorrenciaDetectada = null; // Guardará a ocorrência inédita
 
         snapshot.forEach((doc) => {
             const data = doc.data();
             data.id = doc.id;
             newOccurrences.push(data);
             
-            if (data.status === 'pendente') {
+            // Lógica inteligente de notificação:
+            // 1. É pendente?
+            // 2. Já temos dados carregados na tela? (allOccurrences.length > 0)
+            //    (Isso evita notificar 50 coisas quando você aperta F5)
+            // 3. Essa ocorrência NÃO estava na lista antiga?
+            if (data.status === 'pendente' && allOccurrences.length > 0) {
                 const exists = allOccurrences.find(o => o.id === data.id);
-                if (!exists) hasNewPending = true;
+                if (!exists) {
+                    novaOcorrenciaDetectada = data; // Achamos uma nova!
+                }
             }
         });
 
+        // Atualiza a lista global
         allOccurrences = newOccurrences;
         
         applyFilters(); 
         updateMap(allOccurrences); 
         updateSearchSuggestions(); 
 
-        if(hasNewPending) playAlertSound();
+        // 2. DISPARAR NOTIFICAÇÃO RICA (SE HOUVER NOVIDADE)
+        if (novaOcorrenciaDetectada) {
+            playAlertSound();
+            
+            // Tenta extrair a foto de capa (se houver)
+            let fotoCapa = null;
+            if (novaOcorrenciaDetectada.midias && Array.isArray(novaOcorrenciaDetectada.midias)) {
+                // Procura a primeira imagem válida
+                const img = novaOcorrenciaDetectada.midias.find(m => 
+                    m.tipo === 'foto' || 
+                    (m.tipo && m.tipo.startsWith('image')) || 
+                    (m.dados && m.dados.startsWith('data:image'))
+                );
+                if (img) fotoCapa = img.dados;
+            }
+
+            // Prepara os textos
+            const tipo = (novaOcorrenciaDetectada.tipo || "Ocorrência").toUpperCase();
+            // Pega só o começo do endereço para não ficar gigante
+            const endereco = (novaOcorrenciaDetectada.endereco_completo || "Localização via GPS").substring(0, 45) + "...";
+
+            // Dispara!
+            sendSystemNotification(
+                `🔥 NOVA: ${tipo}`, 
+                `📍 ${endereco}`,
+                fotoCapa
+            );
+        }
 
     }, (error) => {
         console.error("Erro de conexão:", error);
@@ -90,12 +133,41 @@ function listenToOccurrences() {
 
 function playAlertSound() {
     const audio = document.getElementById('alertSound');
-    if(audio) audio.play().catch(() => {});
+    // Tenta tocar, mas ignora erro se o navegador bloquear autoplay
+    if(audio) audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro)."));
+}
+
+// 3. FUNÇÃO DE NOTIFICAÇÃO DO SISTEMA (TURBINADA COM FOTO)
+function sendSystemNotification(titulo, corpo, imagem = null) {
+    // Verifica se o navegador suporta e se tem permissão
+    if ("Notification" in window && Notification.permission === "granted") {
+        
+        const options = {
+            body: corpo,
+            icon: 'icons/favicon-32x32.png', // Ícone pequeno (Logo do App)
+            vibrate: [200, 100, 200], // Padrão de vibração: Tuuuum-tum-tuuuum
+            tag: 'nova-ocorrencia', // Tag evita empilhar 10 notificações iguais
+            requireInteraction: true // No PC, a notificação fica na tela até clicar
+        };
+
+        // Se tiver foto da ocorrência, anexa ela!
+        if (imagem) {
+            options.image = imagem; 
+        }
+
+        const notif = new Notification(titulo, options);
+
+        // Se clicar na notificação, foca na janela do painel
+        notif.onclick = function() {
+            window.focus();
+            this.close();
+        };
+    }
 }
 
 // --- EVENTOS DE UI ---
 function setupUIEvents() {
-    // 1. Filtros
+    // Filtros
     document.getElementById('searchInput').addEventListener('input', applyFilters);
     document.getElementById('filterStatus').addEventListener('change', applyFilters);
     document.getElementById('filterDate').addEventListener('change', applyFilters);
@@ -107,7 +179,7 @@ function setupUIEvents() {
         applyFilters();
     });
 
-    // 2. Minimizar Gráficos
+    // Minimizar Gráficos
     const btnToggle = document.getElementById('btnToggleCharts');
     const wrapper = document.getElementById('chartsWrapper');
     if(btnToggle && wrapper) {
@@ -120,7 +192,7 @@ function setupUIEvents() {
                 wrapper.style.height = "auto";
                 wrapper.style.opacity = "1";
                 const innerGrid = document.getElementById('chartsArea');
-                if(innerGrid) innerGrid.style.display = 'grid'; // Força Grid
+                if(innerGrid) innerGrid.style.display = 'grid'; 
 
                 btnToggle.classList.remove('collapsed');
                 btnToggle.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
@@ -135,7 +207,7 @@ function setupUIEvents() {
         });
     }
 
-    // 3. Exportação Individual (Modal)
+    // Exportação Individual (Modal)
     document.getElementById('btnExportPDF').addEventListener('click', () => exportSinglePDF(currentEditingId));
     document.getElementById('btnExportCSV').addEventListener('click', () => exportSingleCSV(currentEditingId));
 }
@@ -218,7 +290,7 @@ function updateMap(data) {
     });
 }
 
-// Atualização de tabela com Detecção de Offline ---
+// Atualização de tabela com Detecção de Offline e CEP ---
 function updateTable(data) {
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
@@ -242,7 +314,7 @@ function updateTable(data) {
         const addrCellId = `addr-${occ.id}`;
         let displayAddr = (occ.endereco_completo || "").substring(0, 25) + "...";
 
-        // Se for offline, chamamos a função de inteligência (sem await para não travar a tabela)
+        // Se for offline, chamamos a função de inteligência
         if (isOfflineAddr && occ.lat && occ.lng) {
             displayAddr = `<span style="color:#e67e22"><i class="fa-solid fa-sync fa-spin"></i> Resolvendo GPS...</span>`;
             enrichOfflineAddress(occ.id, occ.lat, occ.lng, addrCellId);
@@ -305,7 +377,7 @@ window.editOcc = (id) => {
                     
                     // Estilo para a foto ficar bonita no modal
                     img.style.width = "100%";
-                    img.style.maxWidth = "400px"; // Não deixa ficar gigante
+                    img.style.maxWidth = "400px"; 
                     img.style.borderRadius = "8px";
                     img.style.marginTop = "10px";
                     img.style.border = "1px solid #ccc";
@@ -313,7 +385,6 @@ window.editOcc = (id) => {
                     
                     preview.appendChild(img);
                 } 
-                // Mantemos a lógica de vídeo caso você decida usar no futuro
                 else if (m.tipo && m.tipo.startsWith('video')) {
                     midiaValidaEncontrada = true;
                     const vid = document.createElement('video'); 
@@ -653,36 +724,38 @@ async function checkUserPhone(uid) {
     } catch (e) { console.error(e); }
 }
 
-// Detecção de INTELIGÊNCIA DE ENDEREÇO OFFLINE ---
+// 4. Detecção de INTELIGÊNCIA DE ENDEREÇO OFFLINE (ATUALIZADA COM CEP) ---
 async function enrichOfflineAddress(docId, lat, lng, elementId) {
     try {
         console.log(`📡 Buscando endereço real para ID: ${docId}...`);
         
-        // 1. Busca na API Nominatim (OpenStreetMap)
+        // Busca na API Nominatim
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
         const data = await response.json();
 
         if (data && data.address) {
-            // 2. Formata o endereço bonito
+            // Formata o endereço bonito
             const rua = data.address.road || data.address.pedestrian || "Rua não identificada";
             const bairro = data.address.suburb || data.address.neighbourhood || "";
             const cidade = data.address.city || data.address.town || "";
-            const novoEndereco = `${rua}, ${bairro} - ${cidade} (Recuperado)`;
+            
+            // --- PEGAR O CEP (POSTCODE) ---
+            const cep = data.address.postcode ? ` - CEP: ${data.address.postcode}` : "";
+            const novoEndereco = `${rua}, ${bairro} - ${cidade}${cep} (Recuperado)`;
 
-            // 3. Atualiza Visualmente na Tabela (Feedback Imediato)
+            // Atualiza Visualmente na Tabela
             const cell = document.getElementById(elementId);
             if (cell) {
                 cell.innerHTML = `<span style="color:#27ae60"><i class="fa-solid fa-check"></i></span> ${novoEndereco.substring(0, 25)}...`;
-                cell.title = novoEndereco; // Tooltip com nome completo
+                cell.title = novoEndereco; 
             }
 
-            // 4. ATUALIZA NO FIREBASE (Correção Permanente)
-            // Isso garante que na próxima vez, não precise buscar de novo
+            // ATUALIZA NO FIREBASE
             const docRef = doc(db, "ocorrencias", docId);
             await updateDoc(docRef, { 
                 endereco_completo: novoEndereco 
             });
-            console.log("✅ Endereço corrigido e salvo no banco!");
+            console.log("✅ Endereço corrigido (com CEP) e salvo no banco!");
             
         }
     } catch (e) {

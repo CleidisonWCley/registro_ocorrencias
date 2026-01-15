@@ -287,7 +287,7 @@
 .empty-trash { grid-column: 1 / -1; text-align: center; padding: 60px; color: #bbb; background: #f8f9fa; border-radius: 12px; border: 2px dashed #ddd; }
 
 /* ==========================================================================
-   EXPERIENCIA MOBILE (PAINEL E LIXEIRA)
+   EXPERIENCIA MOBILE (PAINEL E LIXEIRA) 
    Estas regras sobrescrevem o padrão quando a tela é menor que 768px
    ========================================================================== */
 @media (max-width: 768px) {
@@ -305,7 +305,7 @@
         margin: 0 !important;
     }
     
-    /* 2. GRÁFICOS (Correção do Donut Gigante) */
+    /* 2. GRÁFICOS (Correção de Visualização Mobile) */
     .charts-container {
         grid-template-columns: 1fr !important; /* Uma coluna só */
         padding: 10px !important;
@@ -313,22 +313,25 @@
     
     .chart-box {
         width: 100% !important;
-        margin-bottom: 15px;
-        height: auto !important; /* Altura flexível */
-        min-height: auto !important;
+        margin-bottom: 20px; /* Mais espaço entre um e outro */
+        min-height: 350px !important; /* Força a caixa a ser alta para caber legenda */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
-    /* Limita a altura do Canvas (o desenho do gráfico) */
+    /* Permite que o desenho do gráfico cresça mais verticalmente */
     .chart-box canvas {
-        max-height: 250px !important; 
+        max-height: 300px !important; 
         width: 100% !important;
+        height: auto !important;
     }
     
     .chart-full-width {
         grid-column: 1 !important; /* Remove expansão lateral */
     }
 
-    /* --- CORREÇÃO: Botões do Gráfico Lado a Lado --- */
+    /* Botões do Gráfico: Lado a Lado */
     .chart-actions {
         display: flex !important;
         flex-direction: row !important; /* Força linha */
@@ -339,10 +342,10 @@
     
     .chart-actions button {
         width: auto !important; /* Remove largura fixa */
-        flex: 1; /* Faz cada botão ocupar metade do espaço */
+        flex: 1; /* Faz cada botão ocupar metade do espaço (50%) */
         margin-bottom: 0 !important;
         padding: 12px 5px !important; /* Altura boa para o dedo */
-        font-size: 11px !important; /* Texto menor para caber lado a lado */
+        font-size: 11px !important; /* Texto menor para caber */
         display: flex;
         justify-content: center;
         align-items: center;
