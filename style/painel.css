@@ -286,9 +286,8 @@
 .btn-trash-delete { background-color: #c0392b; }
 .empty-trash { grid-column: 1 / -1; text-align: center; padding: 60px; color: #bbb; background: #f8f9fa; border-radius: 12px; border: 2px dashed #ddd; }
 
-
 /* ==========================================================================
-   CORREÇÕES MOBILE ESPECÍFICAS (PAINEL E LIXEIRA)
+   EXPERIENCIA MOBILE (PAINEL E LIXEIRA)
    Estas regras sobrescrevem o padrão quando a tela é menor que 768px
    ========================================================================== */
 @media (max-width: 768px) {
@@ -329,13 +328,25 @@
         grid-column: 1 !important; /* Remove expansão lateral */
     }
 
-    /* Botões do Gráfico Empilhados */
+    /* --- CORREÇÃO: Botões do Gráfico Lado a Lado --- */
     .chart-actions {
-        flex-direction: column !important;
+        display: flex !important;
+        flex-direction: row !important; /* Força linha */
+        flex-wrap: wrap; /* Segurança para telas minúsculas */
+        gap: 10px !important;
+        margin-top: 15px;
     }
+    
     .chart-actions button {
-        width: 100% !important;
-        margin-bottom: 5px;
+        width: auto !important; /* Remove largura fixa */
+        flex: 1; /* Faz cada botão ocupar metade do espaço */
+        margin-bottom: 0 !important;
+        padding: 12px 5px !important; /* Altura boa para o dedo */
+        font-size: 11px !important; /* Texto menor para caber lado a lado */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        white-space: nowrap; /* Evita quebra de texto dentro do botão */
     }
 
     /* 3. TABELA (Scroll Horizontal) */
@@ -366,8 +377,7 @@
         justify-content: space-between;
     }
 
-    /* 6. CORREÇÃO DA LIXEIRA (NOVO) */
-    /* Evita que o grid quebre em telas muito pequenas (ex: iPhone SE) */
+    /* 6. CORREÇÃO DA LIXEIRA */
     .trash-grid {
         grid-template-columns: 1fr !important; /* Uma coluna fluida */
     }

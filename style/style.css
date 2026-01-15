@@ -216,23 +216,60 @@ main.centered-content { flex: 1; display: flex; align-items: center; justify-con
    ========================================================================== */
 @media (max-width: 768px) {
     
-    /* --- Home / Index --- */
+    /* CABEÇALHO (Header) */
+    .header {
+        padding: 10px 15px;
+        gap: 10px;
+    }
+
+    /* Esconde o subtítulo "Sistema de Ocorrências" para dar espaço */
+    .brand div div:last-child { 
+        display: none; 
+    }
+    
+    /* Esconde o e-mail (já estava no seu, mantive) */
+    .user-email-display { display: none !important; }
+
+    /* FORÇA os botões a ficarem lado a lado */
+    .header .actions {
+        display: flex !important;
+        flex-direction: row !important; /* O segredo está aqui */
+        align-items: center;
+        gap: 8px !important;
+    }
+
+    /* Estilo dos botões no mobile (Icon Only) */
+    .header .actions .btn {
+        padding: 0 !important;
+        width: 38px !important;
+        height: 38px !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        font-size: 0 !important; /* Esconde qualquer texto que tenha sobrado */
+    }
+    
+    /* Garante que o ícone fique visível e centralizado */
+    .header .actions .btn i {
+        margin: 0 !important;
+        font-size: 16px !important;
+        display: block !important;
+    }
+    
+    /* Remove span se houver */
+    .header .actions .btn span { display: none !important; }
+
+    /* Home / Index (Mantido do seu original) --- */
     .hero-container { flex-direction: column-reverse !important; text-align: center; }
     .hero-img { margin-bottom: 15px; }
     .hero-buttons { display: flex !important; flex-direction: column !important; width: 100% !important; gap: 15px !important; margin-top: 20px; }
     .hero-buttons .btn { width: 100% !important; display: flex; justify-content: center; align-items: center; padding: 15px !important; margin: 0 !important; }
 
-    /* --- Header e Navegação --- */
-    .header .actions .btn.small span { display: none !important; }
-    .header .actions .btn.small { padding: 10px !important; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-    .header .actions .btn.small i { margin: 0 !important; font-size: 18px; }
-    .user-email-display { display: none !important; }
-
-    /* --- Layout Split Card (Login/Perfil) --- */
+    /* Layout Split Card (Mantido do seu original) --- */
     .split-card-wrapper { flex-direction: column; max-height: none; }
     .split-side-visual { width: 100%; padding: 30px 20px; flex-direction: row; justify-content: flex-start; gap: 15px; text-align: left; }
     .split-icon-large { width: 60px; height: 60px; font-size: 24px; margin: 0; }
-    .btn-google-split { display: none; } /* Google Lateral some no mobile */
+    .btn-google-split { display: none; }
     .split-side-form { width: 100%; padding: 30px 20px; }
 }
 
