@@ -1,12 +1,12 @@
-// ==================== script/app.js (FINAL - COM AUTOCOMPLETE INTELIGENTE) ====================
+// ==================== script/app.js (FINAL - CORREÇÃO OFFLINE E CEP) ====================
 import { db, auth } from './firebase-config.js';
-import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
 let map, marker, accuracyCircle;
 let currentPosition = { lat: null, lng: null };
 let recognition = null;
 let currentAddressText = "Localização não identificada";
-let debounceTimer = null; // Timer para a busca inteligente
+let debounceTimer = null; 
 
 // FIX ÍCONES LEAFLET
 delete L.Icon.Default.prototype._getIconUrl;
@@ -31,10 +31,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const addressInput = document.getElementById("manualAddress");
   const suggestionsBox = document.getElementById("addressSuggestions");
 
-  // Evento de digitação com Debounce (espera 500ms para buscar)
   addressInput.addEventListener("input", function() {
       const query = this.value.trim();
-      clearTimeout(debounceTimer); // Limpa timer anterior
+      clearTimeout(debounceTimer); 
       
       if(query.length < 3) {
           suggestionsBox.style.display = 'none';
@@ -44,7 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
       debounceTimer = setTimeout(() => fetchAddressSuggestions(query), 500);
   });
 
-  // Fecha sugestões ao clicar fora
   document.addEventListener('click', (e) => {
       if (!e.target.closest('.search-wrapper')) {
           suggestionsBox.style.display = 'none';
@@ -80,7 +78,6 @@ async function fetchAddressSuggestions(query) {
     const list = document.getElementById("addressSuggestions");
     
     try {
-        // Busca com prioridade para o Brasil e detalhes de endereço
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&addressdetails=1&limit=5&countrycodes=br`);
         const data = await response.json();
 
@@ -93,31 +90,25 @@ async function fetchAddressSuggestions(query) {
                 const div = document.createElement('div');
                 div.className = 'suggestion-item';
                 
-                // Formata o texto bonito (Rua, Bairro - Cidade, CEP)
                 const addr = item.address;
                 const rua = addr.road || addr.pedestrian || "";
                 const bairro = addr.suburb || addr.neighbourhood || "";
                 const cidade = addr.city || addr.town || addr.municipality || "";
                 const cep = addr.postcode ? ` - CEP: ${addr.postcode}` : "";
                 
-                // Texto de exibição principal
                 let displayText = item.display_name;
-                // Tenta criar um display curto se tivermos os dados
                 if(rua && cidade) displayText = `${rua}, ${bairro} - ${cidade}${cep}`;
 
                 div.innerHTML = `<i class="fa-solid fa-location-dot"></i> <span>${displayText}</span>`;
                 
-                // Ao clicar na sugestão
                 div.addEventListener('click', () => {
                     const lat = parseFloat(item.lat);
                     const lon = parseFloat(item.lon);
                     
-                    // Atualiza o mapa com a posição escolhida
                     updateMapPosition(lat, lon, 0);
                     
-                    // Preenche o input com o texto limpo
                     document.getElementById("manualAddress").value = displayText;
-                    list.style.display = 'none'; // Esconde lista
+                    list.style.display = 'none';
                 });
                 
                 list.appendChild(div);
@@ -130,16 +121,11 @@ async function fetchAddressSuggestions(query) {
     }
 }
 
-// Busca Manual (Botão Lupa - Fallback)
 async function searchManualAddress() {
     const query = document.getElementById("manualAddress").value.trim();
     if (query.length < 3) return;
     
-    // Reutiliza a lógica de sugestão mas pega o primeiro resultado
-    fetchAddressSuggestions(query).then(() => {
-        // Se precisar forçar o primeiro:
-        // A lógica do autocomplete já cobre isso visualmente
-    });
+    fetchAddressSuggestions(query).then(() => {});
 }
 
 // GPS Automático
@@ -214,17 +200,19 @@ function updatePopupContent(title, address) {
     }
 }
 
-// função de nomes para os endereços online e offline com latitudades e longitudes
+// --- FUNÇÃO getAddress (CORRIGIDA: CEP + PREENCHIMENTO VISUAL) ---
 async function getAddress(lat, lng) {
-    // Se estiver offline, nem tenta o fetch para não dar erro no console
+    const manualInput = document.getElementById("manualAddress");
+
+    // 1. Lógica Offline
     if (!navigator.onLine) {
         currentAddressText = `📍 Localização Offline: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-        // Opcional: Avisar visualmente no input manual
-        const manualInput = document.getElementById("manualAddress");
-        if(manualInput && manualInput.value === "") manualInput.value = "Sem internet: Coordenadas salvas.";
+        // Mostra visualmente que está offline
+        if(manualInput) manualInput.value = currentAddressText;
         return;
     }
 
+    // 2. Lógica Online
     try {
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
         const data = await response.json();
@@ -233,38 +221,43 @@ async function getAddress(lat, lng) {
             const bairro = data.address.suburb || data.address.neighbourhood || "";
             const num = data.address.house_number ? `, ${data.address.house_number}` : "";
             const cidade = data.address.city || data.address.town || "";
+            // Adicionado CEP
+            const cep = data.address.postcode ? ` - CEP: ${data.address.postcode}` : "";
             
-            currentAddressText = `${rua}${num}, ${bairro} - ${cidade}`;
+            currentAddressText = `${rua}${num}, ${bairro} - ${cidade}${cep}`;
+            
+            // ATUALIZAÇÃO: Preenche o input visualmente para o usuário ver o endereço
+            if(manualInput) manualInput.value = currentAddressText;
+
         } else {
             currentAddressText = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+            if(manualInput) manualInput.value = currentAddressText;
         }
     } catch (e) { 
-        // Fallback caso o fetch falhe mesmo com internet (ex: timeout)
         currentAddressText = `📍 GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)} (Erro na busca)`; 
+        if(manualInput) manualInput.value = currentAddressText;
     }
 }
 
-// função de audio 
 function setupAudio() {
   const btn = document.getElementById('btnMic');
   const txt = document.getElementById('descricao');
   const status = document.getElementById('micStatus');
   const icon = btn.querySelector('i');
   
-  // Verifica suporte
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) { btn.style.display = 'none'; return; }
   
   recognition = new SpeechRecognition();
   recognition.lang = 'pt-BR';
-  recognition.continuous = false; // MUDANÇA: False evita bugs de repetição no Android
+  recognition.continuous = false; 
   recognition.interimResults = false;
 
   recognition.onstart = () => { 
       status.style.display = 'block'; 
       status.innerText = "Pode falar..."; 
       btn.classList.add('recording'); 
-      icon.className = 'fa-solid fa-ear-listen fa-beat'; // Feedback visual melhor
+      icon.className = 'fa-solid fa-ear-listen fa-beat';
   };
   
   recognition.onend = () => { 
@@ -275,7 +268,6 @@ function setupAudio() {
   
   recognition.onresult = (e) => { 
       const transcript = e.results[0][0].transcript;
-      // Adiciona espaço apenas se já tiver texto
       txt.value += (txt.value.length > 0 ? " " : "") + transcript;
   };
 
@@ -291,10 +283,9 @@ function setupAudio() {
   });
 }
 
-// salvamento
+// --- FUNÇÃO saveOccurrence (CORRIGIDA: LIMPEZA DE TIMEOUT) ---
 async function saveOccurrence(e) {
   e.preventDefault();
-  console.log("Botão Clicado");
   
   // 1. Validações
   if (!currentPosition || !currentPosition.lat) { 
@@ -314,9 +305,10 @@ async function saveOccurrence(e) {
   btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processando...';
   btnSubmit.disabled = true;
 
-  try {
-    console.log("Preparando Mídia");
+  // Variável para guardar o ID do timer e poder cancelar depois
+  let timeoutId;
 
+  try {
     // 3. Processamento de Mídia
     const midias = [];
     const fileInput = document.getElementById('midia');
@@ -344,27 +336,26 @@ async function saveOccurrence(e) {
       data_envio: new Date().toLocaleDateString('pt-BR'),
       hora_envio: new Date().toLocaleTimeString('pt-BR'),
       status: 'pendente',
-      timestamp: new Date(), // BLINDAGEM: Use Date local para evitar travamento de sync
+      timestamp: new Date(), 
       midias: midias,
       userId: auth.currentUser ? auth.currentUser.uid : "anonimo"
     };
 
-    console.log("Enviando ao Firebase...");
-
-    // --- AQUI ESTÁ A CORREÇÃO ANTI-TRAVAMENTO ---
+    // --- CORREÇÃO ANTI-TRAVAMENTO ---
     
-    // Cria uma promessa que falha se demorar mais de 4 segundos
-    const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("TIMEOUT_OFFLINE")), 4000)
-    );
+    // Cria o timer e guarda o ID
+    const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error("TIMEOUT_OFFLINE")), 4000);
+    });
 
-    // Corrida: Quem chegar primeiro ganha (O salvamento ou o tempo esgotado)
+    // Corrida
     await Promise.race([
         addDoc(collection(db, "ocorrencias"), dadosOcorrencia),
         timeoutPromise
     ]);
 
-    console.log("Sucesso!");
+    // IMPORTANTE: Matar o timer para ele não estourar depois e travar a próxima tentativa
+    clearTimeout(timeoutId);
 
     // 6. Sucesso
     if (!navigator.onLine) {
@@ -385,12 +376,18 @@ async function saveOccurrence(e) {
   } catch (err) {
     console.error("❌ ERRO:", err);
     
-    // Tratamento específico para o nosso Timeout
+    // Se deu erro, também limpa o timer por garantia
+    if(timeoutId) clearTimeout(timeoutId);
+
     if (err.message === "TIMEOUT_OFFLINE") {
-        // Se deu timeout, provavelmente salvou no cache mas o Firebase não confirmou.
-        // Vamos considerar como sucesso offline para não frustrar o usuário.
+        // Assume sucesso offline
         showCustomAlert("⚠️ Alerta: Conexão instável. Dados salvos localmente.", "warning");
-        e.target.reset(); // Reseta o form pois "fingimos" que deu certo
+        e.target.reset();
+        
+        // Limpa mapa também no caso de timeout
+        if(marker) map.removeLayer(marker);
+        currentPosition = { lat: null, lng: null };
+        document.getElementById("manualAddress").value = "";
     } else {
         showCustomAlert("Erro ao salvar: " + err.message, "error");
     }
@@ -402,27 +399,6 @@ async function saveOccurrence(e) {
   }
 }
 
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-  });
-}
-
-function showCustomAlert(msg, type) {
-  const el = document.getElementById('customAlert');
-  const msgEl = document.getElementById('customAlertMessage');
-  const header = document.getElementById('customAlertHeader');
-  if(!el) return;
-  msgEl.innerText = msg;
-  header.className = 'custom-alert-header ' + (type === 'success' ? 'success' : (type === 'error' ? 'error' : ''));
-  header.innerText = type === 'success' ? 'Sucesso' : (type === 'error' ? 'Erro' : 'Informação');
-  el.style.display = 'flex';
-}
-
-// Função para reduzir a imagem antes de salvar (Essencial para o Firebase!)
 function comprimirImagem(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -436,7 +412,6 @@ function comprimirImagem(file) {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Redimensiona para no máximo 800px (mantendo proporção)
                 const maxWidth = 800;
                 const scaleSize = maxWidth / img.width;
                 const newWidth = (img.width > maxWidth) ? maxWidth : img.width;
@@ -446,14 +421,10 @@ function comprimirImagem(file) {
                 canvas.height = newHeight;
 
                 ctx.drawImage(img, 0, 0, newWidth, newHeight);
-                
-                // Converte para JPEG com 70% de qualidade (String Base64 limpa)
                 resolve(canvas.toDataURL('image/jpeg', 0.7)); 
             };
-            
             img.onerror = (err) => reject(err);
         };
-        
         reader.onerror = (err) => reject(err);
     });
 }

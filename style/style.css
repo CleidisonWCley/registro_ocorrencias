@@ -235,3 +235,75 @@ main.centered-content { flex: 1; display: flex; align-items: center; justify-con
     .btn-google-split { display: none; } /* Google Lateral some no mobile */
     .split-side-form { width: 100%; padding: 30px 20px; }
 }
+
+/* =========================================
+   BANNER DE INSTALAÇÃO PWA (Via Shared.js)
+   ========================================= */
+.pwa-banner {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 400px;
+    background: rgba(11, 95, 138, 0.95); /* Azul Lascap */
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    display: none; /* Começa oculto */
+    flex-direction: column;
+    gap: 15px;
+    z-index: 9999;
+    animation: slideUp 0.5s ease-out;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.pwa-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.pwa-text {
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.pwa-text strong { font-size: 16px; }
+.pwa-text span { font-size: 12px; opacity: 0.8; }
+
+.pwa-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-install {
+    background: white;
+    color: #0b5f8a;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-install:active { transform: scale(0.95); }
+
+.btn-dismiss {
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    border: none;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+@keyframes slideUp {
+    from { transform: translate(-50%, 100px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+}

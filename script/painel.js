@@ -1,4 +1,4 @@
-// ==================== script/painel.js (VERSÃO FINAL - MVP 2.1 COMPLETO) ====================
+// ==================== script/painel.js  ====================
 
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
@@ -218,6 +218,7 @@ function updateMap(data) {
     });
 }
 
+// Atualização de tabela com Detecção de Offline ---
 function updateTable(data) {
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
@@ -234,12 +235,29 @@ function updateTable(data) {
         else if (occ.status === 'andamento') statusBadge = '<span class="status-badge andamento">EM ANDAMENTO</span>';
         else statusBadge = '<span class="status-badge atendida">CONCLUÍDA</span>';
 
+        // Verifica se é um endereço offline que precisa de tradução
+        const isOfflineAddr = occ.endereco_completo && occ.endereco_completo.includes("Localização Offline");
+        
+        // Se for offline, preparamos um ID especial para atualizar depois
+        const addrCellId = `addr-${occ.id}`;
+        let displayAddr = (occ.endereco_completo || "").substring(0, 25) + "...";
+
+        // Se for offline, chamamos a função de inteligência (sem await para não travar a tabela)
+        if (isOfflineAddr && occ.lat && occ.lng) {
+            displayAddr = `<span style="color:#e67e22"><i class="fa-solid fa-sync fa-spin"></i> Resolvendo GPS...</span>`;
+            enrichOfflineAddress(occ.id, occ.lat, occ.lng, addrCellId);
+        }
+
         tr.innerHTML = `
             <td data-label="Status">${statusBadge}</td>
             <td data-label="Tipo" style="font-weight:600;">${occ.tipo || "-"}</td>
             <td data-label="Descrição" title="${occ.descricao}">${(occ.descricao || "").substring(0, 35)}...</td>
             <td data-label="Data/Hora">${occ.data_envio || "-"} <small style="color:#888">${occ.hora_envio || ""}</small></td>
-            <td data-label="Endereço" style="font-size:12px;">${(occ.endereco_completo || "").substring(0, 25)}...</td>
+            
+            <td id="${addrCellId}" data-label="Endereço" style="font-size:12px;">
+                ${displayAddr}
+            </td>
+            
             <td data-label="Ações">
                 <div style="display:flex; gap:5px; justify-content:flex-end;">
                     <button class="btn small neutral" onclick="window.editOcc('${occ.id}')" title="Ver detalhes"><i class="fa-solid fa-file-lines"></i> DETALHES</button>
@@ -633,4 +651,43 @@ async function checkUserPhone(uid) {
             }
         }
     } catch (e) { console.error(e); }
+}
+
+// Detecção de INTELIGÊNCIA DE ENDEREÇO OFFLINE ---
+async function enrichOfflineAddress(docId, lat, lng, elementId) {
+    try {
+        console.log(`📡 Buscando endereço real para ID: ${docId}...`);
+        
+        // 1. Busca na API Nominatim (OpenStreetMap)
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+        const data = await response.json();
+
+        if (data && data.address) {
+            // 2. Formata o endereço bonito
+            const rua = data.address.road || data.address.pedestrian || "Rua não identificada";
+            const bairro = data.address.suburb || data.address.neighbourhood || "";
+            const cidade = data.address.city || data.address.town || "";
+            const novoEndereco = `${rua}, ${bairro} - ${cidade} (Recuperado)`;
+
+            // 3. Atualiza Visualmente na Tabela (Feedback Imediato)
+            const cell = document.getElementById(elementId);
+            if (cell) {
+                cell.innerHTML = `<span style="color:#27ae60"><i class="fa-solid fa-check"></i></span> ${novoEndereco.substring(0, 25)}...`;
+                cell.title = novoEndereco; // Tooltip com nome completo
+            }
+
+            // 4. ATUALIZA NO FIREBASE (Correção Permanente)
+            // Isso garante que na próxima vez, não precise buscar de novo
+            const docRef = doc(db, "ocorrencias", docId);
+            await updateDoc(docRef, { 
+                endereco_completo: novoEndereco 
+            });
+            console.log("✅ Endereço corrigido e salvo no banco!");
+            
+        }
+    } catch (e) {
+        console.error("Erro ao enriquecer endereço:", e);
+        const cell = document.getElementById(elementId);
+        if (cell) cell.innerText = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    }
 }

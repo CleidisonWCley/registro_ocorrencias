@@ -1,6 +1,6 @@
-// ==================== script/shared.js (ATUALIZADO COM CONFIRM) ====================
+// ==================== script/shared.js (V4 - COMPLETO E INTELIGENTE) ====================
 
-// --- ALERTA SIMPLES (OK) ---
+// --- ALERTA SIMPLES ---
 function showCustomAlert(message, type = 'success') {
   const existingAlert = document.getElementById("customAlert");
   if (existingAlert) existingAlert.remove();
@@ -23,7 +23,7 @@ function showCustomAlert(message, type = 'success') {
     </div>
   `;
 
-  injectStyles(); // Garante que o CSS exista
+  injectStyles(); 
   document.body.appendChild(alertOverlay);
 
   const alertHeader = alertOverlay.querySelector("#customAlertHeader");
@@ -35,6 +35,7 @@ function showCustomAlert(message, type = 'success') {
 
   if (type === 'success') alertTitle.textContent = 'Sucesso!';
   else if (type === 'error') alertTitle.textContent = 'Atenção!';
+  else if (type === 'warning') alertTitle.textContent = 'Aviso!';
 
   alertOverlay.style.display = 'flex';
   
@@ -45,7 +46,7 @@ function showCustomAlert(message, type = 'success') {
   });
 }
 
-// --- NOVO: MODAL DE CONFIRMAÇÃO (SIM/NÃO) ---
+// --- MODAL DE CONFIRMAÇÃO ---
 window.showCustomConfirm = function(message, callback) {
   const existing = document.getElementById("customConfirmOverlay");
   if (existing) existing.remove();
@@ -74,7 +75,6 @@ window.showCustomConfirm = function(message, callback) {
   document.body.appendChild(overlay);
   overlay.style.display = 'flex';
 
-  // Eventos dos Botões
   document.getElementById('btnConfirmYes').onclick = function() {
       overlay.remove();
       if(callback) callback(true);
@@ -85,7 +85,6 @@ window.showCustomConfirm = function(message, callback) {
       if(callback) callback(false);
   };
   
-  // Fecha ao clicar fora
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
         overlay.remove();
@@ -94,7 +93,7 @@ window.showCustomConfirm = function(message, callback) {
   });
 };
 
-// Função auxiliar para injetar CSS (evita repetição)
+// CSS Injetado dinamicamente
 function injectStyles() {
   if (!document.getElementById('custom-alert-styles')) {
     const style = document.createElement('style');
@@ -116,6 +115,7 @@ function injectStyles() {
       .custom-alert-header { padding: 15px; color: white; font-size: 1.1em; font-weight: bold; }
       .custom-alert-header.success { background-color: #1ca66b; }
       .custom-alert-header.error { background-color: #d9534f; }
+      .custom-alert-header.warning { background-color: #f0ad4e; color: #333; }
       .custom-alert-body { padding: 25px 20px; font-size: 1.05em; color: #555; line-height: 1.5; }
       .custom-alert-footer { padding: 15px; background-color: #f8f9fa; border-top: 1px solid #eee; }
       #customAlertClose {
@@ -124,50 +124,137 @@ function injectStyles() {
         font-size: 1em; font-weight: 600;
       }
       #customAlertClose:hover { opacity: 0.9; }
+      
+      /* Estilo do Toast de Sincronização */
+      .sync-toast {
+          position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+          background-color: #0b5f8a; color: white;
+          padding: 12px 24px; border-radius: 50px;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+          z-index: 10000; font-weight: bold; font-family: 'Segoe UI', sans-serif;
+          display: flex; align-items: center; gap: 10px;
+          opacity: 0; transition: opacity 0.5s ease-in-out;
+          white-space: nowrap;
+      }
     `;
     document.head.appendChild(style);
   }
 }
 
+// =======================================================
+// === GERENCIADOR GLOBAL (Offline + Sync + PWA) ===
+// =======================================================
 window.addEventListener('load', () => {
-    // 1. Cria o elemento HTML do aviso (uma barrinha no topo)
+    
+    // --- 1. CONFIGURAÇÃO DE REDE E SYNC ---
     const offlineBanner = document.createElement('div');
     offlineBanner.id = 'offline-banner';
     offlineBanner.innerHTML = '<i class="fa-solid fa-wifi-slash"></i> Você está Offline. Dados serão salvos no dispositivo.';
     
-    // Estilo da barrinha (CSS via JS pra ser rápido)
     Object.assign(offlineBanner.style, {
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        width: '100%',
-        backgroundColor: '#d9534f', // Vermelho alerta
-        color: 'white',
-        textAlign: 'center',
-        padding: '10px',
-        fontSize: '14px',
-        zIndex: '9999',
-        display: 'none', // Começa escondido
-        boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+        position: 'fixed', top: '0', left: '0', width: '100%',
+        backgroundColor: '#d9534f', color: 'white', textAlign: 'center',
+        padding: '10px', fontSize: '14px', zIndex: '9999',
+        display: 'none', boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
     });
-
     document.body.appendChild(offlineBanner);
 
-    // 2. Função que liga/desliga o aviso
-    function updateNetworkStatus() {
-        if (navigator.onLine) {
-            offlineBanner.style.display = 'none'; // Tem net? Esconde.
-            console.log("🟢 Conexão restabelecida!");
-        } else {
-            offlineBanner.style.display = 'block'; // Sem net? Mostra.
-            console.log("🔴 Conexão perdida! Modo Offline.");
-        }
+    let wasOffline = false;
+
+    function showSyncToast() {
+        // Evita duplicar toast
+        if(document.querySelector('.sync-toast')) return;
+
+        const toast = document.createElement('div');
+        toast.className = 'sync-toast';
+        toast.innerHTML = '<i class="fa-solid fa-rotate fa-spin"></i> Sincronizando dados pendentes...';
+        document.body.appendChild(toast);
+        
+        requestAnimationFrame(() => toast.style.opacity = '1');
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500);
+        }, 3500);
     }
 
-    // 3. Ouve as mudanças de estado
+    function updateNetworkStatus() {
+        if (navigator.onLine) {
+            offlineBanner.style.display = 'none';
+            // Se estava offline antes e voltou agora, mostra o Sync!
+            if (wasOffline) {
+                showSyncToast();
+                wasOffline = false;
+            }
+        } else {
+            offlineBanner.style.display = 'block';
+            wasOffline = true;
+        }
+    }
+    
     window.addEventListener('online', updateNetworkStatus);
     window.addEventListener('offline', updateNetworkStatus);
+    
+    // Checagem inicial silenciosa (sem toast)
+    if (!navigator.onLine) {
+        offlineBanner.style.display = 'block';
+        wasOffline = true;
+    }
 
-    // Checa o status assim que carrega
-    updateNetworkStatus();
+    // --- 2. BANNER DE INSTALAÇÃO PWA (CONTROLADO POR SESSÃO) ---
+    const pwaBanner = document.createElement('div');
+    pwaBanner.id = 'pwa-install-banner';
+    pwaBanner.className = 'pwa-banner';
+    pwaBanner.innerHTML = `
+        <div class="pwa-content">
+            <div class="pwa-icon">
+                <img src="icons/favicon-32x32.png" alt="Logo" style="width: 32px; height: 32px;">
+            </div>
+            <div class="pwa-text">
+                <strong>Instalar Lascap Fire</strong>
+                <span>Acesse offline e mais rápido.</span>
+            </div>
+        </div>
+        <div class="pwa-actions">
+            <button id="pwa-dismiss" class="btn-dismiss">Agora não</button>
+            <button id="pwa-install" class="btn-install">INSTALAR</button>
+        </div>
+    `;
+    document.body.appendChild(pwaBanner);
+
+    let deferredPrompt;
+    const btnInstall = pwaBanner.querySelector('#pwa-install');
+    const btnDismiss = pwaBanner.querySelector('#pwa-dismiss');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // --- VERIFICAÇÃO INTELIGENTE (Session Storage) ---
+        // Verifica se o usuário já dispensou o banner NESTA SESSÃO (aba aberta)
+        const bannerDismissed = sessionStorage.getItem('pwa_banner_dismissed');
+
+        // Só mostra se: NÃO foi dispensado E NÃO está instalado (standalone)
+        if (!bannerDismissed && !window.matchMedia('(display-mode: standalone)').matches) {
+            pwaBanner.style.display = 'flex'; 
+        }
+    });
+
+    btnInstall.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            pwaBanner.style.display = 'none';
+            
+            // Marca na sessão que já interagiu
+            sessionStorage.setItem('pwa_banner_dismissed', 'true');
+        }
+    });
+
+    btnDismiss.addEventListener('click', () => {
+        pwaBanner.style.display = 'none';
+        // Marca na sessão que não quer ver AGORA
+        sessionStorage.setItem('pwa_banner_dismissed', 'true');
+    });
 });
