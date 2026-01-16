@@ -1,9 +1,9 @@
-// ==================== script/painel.js (VERSÃO FINAL: NOTIFICAÇÕES RICAS + CEP) ====================
+// ==================== script/painel.js (FINAL: NOMES DE USUÁRIO + TRADUÇÃO + AUDITORIA) ====================
 
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 import { 
-    collection, query, orderBy, onSnapshot, 
+    collection, query, orderBy, onSnapshot, where, getDocs, // ADICIONADO: where, getDocs
     doc, getDoc, updateDoc, deleteDoc, setDoc, serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
@@ -12,13 +12,59 @@ let map, markersLayer;
 let allOccurrences = []; 
 let currentEditingId = null;
 let chartInstances = {};
+const userCache = {}; // ADICIONADO: Cache para não buscar o mesmo nome mil vezes
 // Acesso à biblioteca jsPDF
 const { jsPDF } = window.jspdf;
+
+// --- FUNÇÃO DE TRADUÇÃO DE TIPOS (OFICIAL) ---
+function formatarTipo(tipoCod) {
+    if (!tipoCod) return "Não informado";
+    
+    const mapaTipos = {
+        'incendio': 'Combate a Incêndios',
+        'busca_salvamento': 'Busca e Salvamento',
+        'aph': 'Atendimento Pré-Hospitalar (APH)',
+        'defesa_civil': 'Ações de Defesa Civil',
+        'outro': 'Outros'
+    };
+
+    return mapaTipos[tipoCod] || tipoCod.toUpperCase();
+}
+
+// --- NOVO: FUNÇÃO PARA DESCOBRIR O NOME DO USUÁRIO ---
+async function resolveUserName(email) {
+    // Se não tiver email ou for sistema, retorna logo
+    if (!email || email === 'Sistema' || email === '-') return email || '-';
+    
+    // Se já buscamos antes, pega do cache (Economiza leitura no banco)
+    if (userCache[email]) return userCache[email];
+
+    try {
+        // Busca na coleção de usuários pelo email
+        const q = query(collection(db, "usuarios"), where("email", "==", email));
+        const snapshot = await getDocs(q);
+        
+        let nomeEncontrado = email; // Se não achar, usa o email mesmo
+        if (!snapshot.empty) {
+            const userData = snapshot.docs[0].data();
+            if (userData.nome) {
+                // Pega só o primeiro nome e o sobrenome para não ficar gigante
+                const partes = userData.nome.split(' ');
+                nomeEncontrado = partes.length > 1 ? `${partes[0]} ${partes[partes.length-1]}` : partes[0];
+            }
+        }
+
+        userCache[email] = nomeEncontrado; // Salva no cache
+        return nomeEncontrado;
+    } catch (e) {
+        console.error("Erro ao buscar nome:", e);
+        return email; // Em caso de erro, retorna o email
+    }
+}
 
 // --- INICIALIZAÇÃO ---
 document.addEventListener("DOMContentLoaded", () => {
     
-    // 1. PEDIR PERMISSÃO PARA NOTIFICAÇÕES
     if ("Notification" in window) {
         if (Notification.permission !== "granted" && Notification.permission !== "denied") {
             Notification.requestPermission();
@@ -37,7 +83,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Logout Seguro
     const btnLogout = document.getElementById('btnLogout');
     if(btnLogout) {
         btnLogout.addEventListener('click', () => {
@@ -64,65 +109,41 @@ function initMap() {
     markersLayer = L.layerGroup().addTo(map);
 }
 
-// --- FIREBASE REAL-TIME (COM DETECÇÃO DE NOVIDADE) ---
+// --- FIREBASE REAL-TIME ---
 function listenToOccurrences() {
     const q = query(collection(db, "ocorrencias"), orderBy("timestamp", "desc"));
 
     onSnapshot(q, (snapshot) => {
         const newOccurrences = [];
-        let novaOcorrenciaDetectada = null; // Guardará a ocorrência inédita
+        let novaOcorrenciaDetectada = null;
 
         snapshot.forEach((doc) => {
             const data = doc.data();
             data.id = doc.id;
             newOccurrences.push(data);
             
-            // Lógica inteligente de notificação:
-            // 1. É pendente?
-            // 2. Já temos dados carregados na tela? (allOccurrences.length > 0)
-            //    (Isso evita notificar 50 coisas quando você aperta F5)
-            // 3. Essa ocorrência NÃO estava na lista antiga?
             if (data.status === 'pendente' && allOccurrences.length > 0) {
                 const exists = allOccurrences.find(o => o.id === data.id);
                 if (!exists) {
-                    novaOcorrenciaDetectada = data; // Achamos uma nova!
+                    novaOcorrenciaDetectada = data;
                 }
             }
         });
 
-        // Atualiza a lista global
         allOccurrences = newOccurrences;
         
         applyFilters(); 
         updateMap(allOccurrences); 
         updateSearchSuggestions(); 
 
-        // 2. DISPARAR NOTIFICAÇÃO RICA (SE HOUVER NOVIDADE)
         if (novaOcorrenciaDetectada) {
             playAlertSound();
-            
-            // Tenta extrair a foto de capa (se houver)
-            let fotoCapa = null;
-            if (novaOcorrenciaDetectada.midias && Array.isArray(novaOcorrenciaDetectada.midias)) {
-                // Procura a primeira imagem válida
-                const img = novaOcorrenciaDetectada.midias.find(m => 
-                    m.tipo === 'foto' || 
-                    (m.tipo && m.tipo.startsWith('image')) || 
-                    (m.dados && m.dados.startsWith('data:image'))
-                );
-                if (img) fotoCapa = img.dados;
-            }
+            const tipoBonito = formatarTipo(novaOcorrenciaDetectada.tipo);
+            const endereco = (novaOcorrenciaDetectada.endereco_completo || "Localização GPS").split(',')[0]; 
 
-            // Prepara os textos
-            const tipo = (novaOcorrenciaDetectada.tipo || "Ocorrência").toUpperCase();
-            // Pega só o começo do endereço para não ficar gigante
-            const endereco = (novaOcorrenciaDetectada.endereco_completo || "Localização via GPS").substring(0, 45) + "...";
-
-            // Dispara!
             sendSystemNotification(
-                `🔥 NOVA: ${tipo}`, 
-                `📍 ${endereco}`,
-                fotoCapa
+                `🚨 NOVA: ${tipoBonito}`, 
+                `Local: ${endereco}`
             );
         }
 
@@ -133,41 +154,24 @@ function listenToOccurrences() {
 
 function playAlertSound() {
     const audio = document.getElementById('alertSound');
-    // Tenta tocar, mas ignora erro se o navegador bloquear autoplay
-    if(audio) audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro)."));
+    if(audio) audio.play().catch(e => console.log("Áudio bloqueado."));
 }
 
-// 3. FUNÇÃO DE NOTIFICAÇÃO DO SISTEMA (TURBINADA COM FOTO)
-function sendSystemNotification(titulo, corpo, imagem = null) {
-    // Verifica se o navegador suporta e se tem permissão
+function sendSystemNotification(titulo, corpo) {
     if ("Notification" in window && Notification.permission === "granted") {
-        
-        const options = {
+        const notif = new Notification(titulo, {
             body: corpo,
-            icon: 'icons/favicon-32x32.png', // Ícone pequeno (Logo do App)
-            vibrate: [200, 100, 200], // Padrão de vibração: Tuuuum-tum-tuuuum
-            tag: 'nova-ocorrencia', // Tag evita empilhar 10 notificações iguais
-            requireInteraction: true // No PC, a notificação fica na tela até clicar
-        };
-
-        // Se tiver foto da ocorrência, anexa ela!
-        if (imagem) {
-            options.image = imagem; 
-        }
-
-        const notif = new Notification(titulo, options);
-
-        // Se clicar na notificação, foca na janela do painel
-        notif.onclick = function() {
-            window.focus();
-            this.close();
-        };
+            icon: 'icons/favicon-32x32.png',
+            vibrate: [200, 100, 200], 
+            tag: 'nova-ocorrencia',
+            requireInteraction: false
+        });
+        notif.onclick = function() { window.focus(); this.close(); };
     }
 }
 
 // --- EVENTOS DE UI ---
 function setupUIEvents() {
-    // Filtros
     document.getElementById('searchInput').addEventListener('input', applyFilters);
     document.getElementById('filterStatus').addEventListener('change', applyFilters);
     document.getElementById('filterDate').addEventListener('change', applyFilters);
@@ -179,7 +183,6 @@ function setupUIEvents() {
         applyFilters();
     });
 
-    // Minimizar Gráficos
     const btnToggle = document.getElementById('btnToggleCharts');
     const wrapper = document.getElementById('chartsWrapper');
     if(btnToggle && wrapper) {
@@ -187,17 +190,21 @@ function setupUIEvents() {
             const isHidden = wrapper.style.height === "0px" || wrapper.style.display === "none" || wrapper.style.display === "";
 
             if (isHidden) {
-                // Expandir
                 wrapper.style.display = "block";
                 wrapper.style.height = "auto";
                 wrapper.style.opacity = "1";
                 const innerGrid = document.getElementById('chartsArea');
-                if(innerGrid) innerGrid.style.display = 'grid'; 
+                
+                if(window.innerWidth <= 768) {
+                    innerGrid.style.display = 'flex'; 
+                    innerGrid.style.flexDirection = 'column';
+                } else {
+                    innerGrid.style.display = 'grid'; 
+                }
 
                 btnToggle.classList.remove('collapsed');
                 btnToggle.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
             } else {
-                // Minimizar
                 wrapper.style.height = "0px";
                 wrapper.style.opacity = "0";
                 setTimeout(() => wrapper.style.display = "none", 300);
@@ -207,7 +214,6 @@ function setupUIEvents() {
         });
     }
 
-    // Exportação Individual (Modal)
     document.getElementById('btnExportPDF').addEventListener('click', () => exportSinglePDF(currentEditingId));
     document.getElementById('btnExportCSV').addEventListener('click', () => exportSingleCSV(currentEditingId));
 }
@@ -219,9 +225,10 @@ function applyFilters() {
     const dateTerm = document.getElementById('filterDate').value; 
 
     const filtered = allOccurrences.filter(occ => {
+        const tipoTraduzido = formatarTipo(occ.tipo).toLowerCase();
         const matchesText = (
             (occ.descricao || "").toLowerCase().includes(textTerm) ||
-            (occ.tipo || "").toLowerCase().includes(textTerm) ||
+            tipoTraduzido.includes(textTerm) ||
             (occ.endereco_completo || "").toLowerCase().includes(textTerm)
         );
         const matchesStatus = statusTerm === "" || occ.status === statusTerm;
@@ -245,7 +252,7 @@ function updateSearchSuggestions() {
     dataList.innerHTML = "";
     const suggestions = new Set();
     allOccurrences.forEach(o => {
-        if(o.tipo) suggestions.add(o.tipo);
+        if(o.tipo) suggestions.add(formatarTipo(o.tipo));
         if(o.endereco_completo) {
             const parts = o.endereco_completo.split('-');
             if(parts.length > 1) suggestions.add(parts[1].trim());
@@ -258,7 +265,6 @@ function updateSearchSuggestions() {
     });
 }
 
-// --- MAPA E TABELA ---
 function updateMap(data) {
     if(!markersLayer) return;
     markersLayer.clearLayers();
@@ -269,6 +275,7 @@ function updateMap(data) {
         if (occ.lat && occ.lng) {
             let marker;
             const statusClean = (occ.status || "").toLowerCase().trim();
+            const tipoBonito = formatarTipo(occ.tipo);
 
             if (statusClean === 'andamento') {
                 marker = L.circleMarker([occ.lat, occ.lng], {
@@ -281,7 +288,7 @@ function updateMap(data) {
             }
 
             marker.bindPopup(`
-                <b>${(occ.tipo || "Ocorrência").toUpperCase()}</b><br>
+                <b>${tipoBonito.toUpperCase()}</b><br>
                 ${occ.endereco_completo || ""}<br>
                 <button onclick="window.editOcc('${occ.id}')" style="margin-top:5px; width:100%; background:#0b5f8a; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">Ver Detalhes</button>
             `);
@@ -290,42 +297,46 @@ function updateMap(data) {
     });
 }
 
-// Atualização de tabela com Detecção de Offline e CEP ---
-function updateTable(data) {
+// --- ATUALIZAÇÃO DA TABELA (AGORA ASSÍNCRONA PARA BUSCAR NOMES) ---
+async function updateTable(data) {
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
     
     if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">Nenhuma ocorrência encontrada.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Nenhuma ocorrência encontrada.</td></tr>`;
         return;
     }
 
-    data.forEach(occ => {
+    // Usamos um loop 'for' moderno para poder usar await dentro dele
+    for (const occ of data) {
         const tr = document.createElement("tr");
         let statusBadge = '';
         if (occ.status === 'pendente') statusBadge = '<span class="status-badge pendente">PENDENTE</span>';
         else if (occ.status === 'andamento') statusBadge = '<span class="status-badge andamento">EM ANDAMENTO</span>';
         else statusBadge = '<span class="status-badge atendida">CONCLUÍDA</span>';
 
-        // Verifica se é um endereço offline que precisa de tradução
         const isOfflineAddr = occ.endereco_completo && occ.endereco_completo.includes("Localização Offline");
-        
-        // Se for offline, preparamos um ID especial para atualizar depois
         const addrCellId = `addr-${occ.id}`;
         let displayAddr = (occ.endereco_completo || "").substring(0, 25) + "...";
 
-        // Se for offline, chamamos a função de inteligência
-        if (isOfflineAddr && occ.lat && occ.lng) {
-            displayAddr = `<span style="color:#e67e22"><i class="fa-solid fa-sync fa-spin"></i> Resolvendo GPS...</span>`;
-            enrichOfflineAddress(occ.id, occ.lat, occ.lng, addrCellId);
-        }
+        // AQUI ESTÁ A MÁGICA: Resolve o nome baseado no email salvo
+        // Se tiver email, busca o nome. Se não, mostra '-'
+        const nomeQuemAtualizou = occ.atualizado_por ? await resolveUserName(occ.atualizado_por) : '-';
+        const updatedDate = occ.data_atualizacao || '-';
+        
+        const tipoBonito = formatarTipo(occ.tipo);
 
         tr.innerHTML = `
             <td data-label="Status">${statusBadge}</td>
-            <td data-label="Tipo" style="font-weight:600;">${occ.tipo || "-"}</td>
+            <td data-label="Tipo" style="font-weight:600;">${tipoBonito}</td>
             <td data-label="Descrição" title="${occ.descricao}">${(occ.descricao || "").substring(0, 35)}...</td>
             <td data-label="Data/Hora">${occ.data_envio || "-"} <small style="color:#888">${occ.hora_envio || ""}</small></td>
             
+            <td data-label="Atualização" style="font-size:11px; line-height:1.2;">
+                <div style="color:#333;">${updatedDate}</div>
+                <div style="color:#0b5f8a; font-weight:bold;">${nomeQuemAtualizou.toUpperCase()}</div>
+            </td>
+
             <td id="${addrCellId}" data-label="Endereço" style="font-size:12px;">
                 ${displayAddr}
             </td>
@@ -338,7 +349,12 @@ function updateTable(data) {
             </td>
         `;
         tbody.appendChild(tr);
-    });
+
+        // Se for offline, resolve o GPS depois de adicionar a linha no DOM
+        if (isOfflineAddr && occ.lat && occ.lng) {
+            enrichOfflineAddress(occ.id, occ.lat, occ.lng, addrCellId);
+        }
+    }
 }
 
 // --- MODAL DE DETALHES ---
@@ -353,7 +369,8 @@ window.editOcc = (id) => {
     document.getElementById('modalEndereco').innerText = occ.endereco_completo || "Sem localização";
     document.getElementById('modalStatus').value = occ.status;
     
-    // Carimbo Digital
+    document.getElementById('modalTitle').innerText = formatarTipo(occ.tipo).toUpperCase();
+    
     const fakeHash = btoa(id + (occ.data_envio || "")).substring(0, 20).toUpperCase();
     document.getElementById('stampHash').innerText = fakeHash;
     document.getElementById('stampDate').innerText = `${occ.data_envio} às ${occ.hora_envio}`;
@@ -365,7 +382,6 @@ window.editOcc = (id) => {
     if (occ.midias && Array.isArray(occ.midias)) {
         occ.midias.forEach(m => {
             if (m.dados) {
-                // AGORA ACEITA 'foto' E 'image'
                 const isImage = m.tipo === 'foto' || 
                                 (m.tipo && m.tipo.startsWith('image')) || 
                                 m.dados.startsWith('data:image');
@@ -374,15 +390,11 @@ window.editOcc = (id) => {
                     midiaValidaEncontrada = true;
                     const img = document.createElement('img');
                     img.src = m.dados;
-                    
-                    // Estilo para a foto ficar bonita no modal
                     img.style.width = "100%";
                     img.style.maxWidth = "400px"; 
                     img.style.borderRadius = "8px";
                     img.style.marginTop = "10px";
                     img.style.border = "1px solid #ccc";
-                    img.alt = "Evidência da Ocorrência";
-                    
                     preview.appendChild(img);
                 } 
                 else if (m.tipo && m.tipo.startsWith('video')) {
@@ -404,7 +416,6 @@ window.editOcc = (id) => {
     document.getElementById('detailsModal').style.display = 'flex';
 };
 
-// --- FUNÇÃO AUXILIAR PARA IMAGENS ---
 function getBase64Image(imgElement) {
     const canvas = document.createElement("canvas");
     canvas.width = imgElement.naturalWidth;
@@ -414,8 +425,7 @@ function getBase64Image(imgElement) {
     return canvas.toDataURL("image/png");
 }
 
-// --- EXPORTAÇÃO INDIVIDUAL PDF ---
-window.exportSinglePDF = (id) => {
+window.exportSinglePDF = async (id) => {
     const occ = allOccurrences.find(o => o.id === id);
     if(!occ) return;
 
@@ -430,7 +440,6 @@ window.exportSinglePDF = (id) => {
     doc.setFontSize(12);
     let y = 45;
     
-    // Dados
     const addLine = (label, val) => {
         doc.setFont("helvetica", "bold"); doc.text(label, 20, y);
         doc.setFont("helvetica", "normal"); doc.text(String(val), 60, y);
@@ -439,10 +448,15 @@ window.exportSinglePDF = (id) => {
     
     addLine("ID Registro:", id);
     addLine("Data/Hora:", `${occ.data_envio} - ${occ.hora_envio}`);
-    addLine("Tipo:", occ.tipo || "Geral");
+    addLine("Tipo:", formatarTipo(occ.tipo));
     addLine("Status:", occ.status.toUpperCase());
 
-    // Endereço (Multilinha)
+    // Resolve o nome para o PDF também!
+    if(occ.atualizado_por) {
+        const nomePDF = await resolveUserName(occ.atualizado_por);
+        addLine("Última Atualização:", `${occ.data_atualizacao} por ${nomePDF}`);
+    }
+
     doc.setFont("helvetica", "bold"); doc.text("Endereço:", 20, y);
     doc.setFont("helvetica", "normal"); 
     const splitAddr = doc.splitTextToSize(occ.endereco_completo || "", 120);
@@ -455,7 +469,6 @@ window.exportSinglePDF = (id) => {
     const splitDesc = doc.splitTextToSize(occ.descricao || "", 170);
     doc.text(splitDesc, 20, y);
 
-    // Carimbo Visual no PDF
     y += (10 * splitDesc.length) + 20;
     doc.setDrawColor(200);
     doc.rect(20, y, 170, 35); 
@@ -470,25 +483,29 @@ window.exportSinglePDF = (id) => {
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text("Certificação Digital de Integridade - CBMPE", 55, y+12);
+    doc.text("Certificação Digital - CBMPE", 55, y+12);
     doc.text(`Hash: ${btoa(id).substring(0,25)}...`, 55, y+22);
-    doc.text("Documento gerado eletronicamente.", 55, y+28);
     
     doc.save(`ocorrencia_${id.substring(0,6)}.pdf`);
     showCustomAlert("PDF gerado com sucesso!", "success");
 };
 
-// --- EXPORTAÇÃO INDIVIDUAL CSV ---
-window.exportSingleCSV = (id) => {
+window.exportSingleCSV = async (id) => {
     const occ = allOccurrences.find(o => o.id === id);
     if(!occ) return;
-    const headers = ["ID", "Data", "Hora", "Tipo", "Status", "Endereço", "Descrição"];
+    
+    // Resolve nome para o CSV
+    const nomeCSV = occ.atualizado_por ? await resolveUserName(occ.atualizado_por) : '-';
+
+    const headers = ["ID", "Data", "Hora", "Tipo", "Status", "Endereço", "Descrição", "Atualizado Por"];
     const row = [
-        occ.id, occ.data_envio, occ.hora_envio, occ.tipo, occ.status, 
+        occ.id, occ.data_envio, occ.hora_envio, 
+        formatarTipo(occ.tipo),
+        occ.status, 
         `"${(occ.endereco_completo||"").replace(/"/g, '""')}"`, 
-        `"${(occ.descricao||"").replace(/"/g, '""')}"`
+        `"${(occ.descricao||"").replace(/"/g, '""')}"`,
+        `"${nomeCSV}"`
     ];
-    // BOM para UTF-8 no Excel
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers.join(",") + "\n" + row.join(",");
     const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `ocorrencia_${id}.csv`);
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
@@ -496,7 +513,6 @@ window.exportSingleCSV = (id) => {
     showCustomAlert("CSV exportado com sucesso!", "success");
 };
 
-// --- OPERAÇÕES ---
 const btnSave = document.getElementById('btnSaveChanges');
 if(btnSave) {
     btnSave.addEventListener('click', async () => {
@@ -507,7 +523,16 @@ if(btnSave) {
         btnSave.disabled = true;
         try {
             const occRef = doc(db, "ocorrencias", currentEditingId);
-            await updateDoc(occRef, { status: newStatus });
+            
+            // Salva o EMAIL no banco (dados técnicos), mas a tela mostrará o NOME
+            const updateData = {
+                status: newStatus,
+                data_atualizacao: new Date().toLocaleString('pt-BR'),
+                atualizado_por: auth.currentUser ? auth.currentUser.email : 'Sistema'
+            };
+
+            await updateDoc(occRef, updateData);
+            
             document.getElementById('detailsModal').style.display = 'none';
             showCustomAlert("Status atualizado com sucesso!", "success");
         } catch (e) { 
@@ -522,7 +547,7 @@ document.getElementById('closeModal').addEventListener('click', () => {
 });
 
 window.delOcc = (id) => {
-    showCustomConfirm("Tem certeza que deseja mover esta ocorrência para a LIXEIRA? (Ela poderá ser recuperada em 30 dias)", async (confirmed) => {
+    showCustomConfirm("Tem certeza que deseja mover esta ocorrência para a LIXEIRA?", async (confirmed) => {
         if (confirmed) {
             try {
                 const docRef = doc(db, "ocorrencias", id);
@@ -544,11 +569,9 @@ window.delOcc = (id) => {
     });
 };
 
-// --- GRÁFICOS E RELATÓRIOS ---
 document.getElementById('btnGenerateCharts').addEventListener('click', generateCharts);
 
 function generateCharts() {
-    // Abre a área de gráficos
     const wrapper = document.getElementById('chartsWrapper');
     const innerGrid = document.getElementById('chartsArea');
 
@@ -556,27 +579,34 @@ function generateCharts() {
         wrapper.style.display = 'block'; 
         wrapper.style.height = 'auto'; 
         wrapper.style.opacity = '1';
-        
         const btnToggle = document.getElementById('btnToggleCharts');
         if(btnToggle) {
             btnToggle.classList.remove('collapsed');
             btnToggle.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
         }
     }
-    if(innerGrid) innerGrid.style.display = 'grid';
+    
+    if(innerGrid) {
+        if(window.innerWidth <= 768) {
+            innerGrid.style.display = 'flex'; 
+            innerGrid.style.flexDirection = 'column';
+        } else {
+            innerGrid.style.display = 'grid'; 
+        }
+    }
 
-    // Limpa anteriores
     if (chartInstances.type) chartInstances.type.destroy();
     if (chartInstances.status) chartInstances.status.destroy();
     if (chartInstances.timeline) chartInstances.timeline.destroy();
 
-    // Processa
     const typeCount = {};
     const statusCount = { pendente: 0, andamento: 0, atendida: 0 };
     const timelineCount = {};
 
     allOccurrences.forEach(o => {
-        typeCount[o.tipo] = (typeCount[o.tipo] || 0) + 1;
+        const nomeBonito = formatarTipo(o.tipo);
+        typeCount[nomeBonito] = (typeCount[nomeBonito] || 0) + 1;
+        
         const st = (o.status || "").toLowerCase();
         if(statusCount[st] !== undefined) statusCount[st]++;
         if(o.data_envio) {
@@ -588,7 +618,6 @@ function generateCharts() {
         }
     });
 
-    // Gera Charts
     chartInstances.type = new Chart(document.getElementById('chartType'), {
         type: 'doughnut', 
         data: { labels: Object.keys(typeCount), datasets: [{ data: Object.values(typeCount), backgroundColor: ['#d9534f', '#f0ad4e', '#5cb85c', '#5bc0de', '#999'] }] }
@@ -606,97 +635,65 @@ function generateCharts() {
     });
 }
 
-// === NOVO: EXPORTAÇÃO DE RELATÓRIO GERAL (PDF COM GRÁFICOS) ===
 window.downloadGeneralPDF = () => {
     if (!allOccurrences.length) { 
         showCustomAlert("Sem dados para gerar relatório.", "error"); 
         return; 
     }
-
     const doc = new jsPDF();
     const dateStr = new Date().toLocaleString('pt-BR');
-
-    // Cabeçalho
     doc.setFillColor(11, 95, 138); 
     doc.rect(0, 0, 210, 25, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
     doc.text("RELATÓRIO DE MONITORAMENTO", 105, 16, null, null, "center");
-    
     doc.setFontSize(10);
     doc.text(`Gerado em: ${dateStr}`, 105, 22, null, null, "center");
-
     let y = 40;
     doc.setTextColor(0, 0, 0);
-
-    // 1. Resumo em Texto
     doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.text("1. Resumo Estatístico", 15, y); y += 10;
-
     const total = allOccurrences.length;
-    const pendente = allOccurrences.filter(o => o.status === 'pendente').length;
-    const andamento = allOccurrences.filter(o => o.status === 'andamento').length;
-    const concluida = allOccurrences.filter(o => o.status === 'atendida').length;
-
     doc.setFontSize(11); doc.setFont("helvetica", "normal");
-    doc.text(`Total de Ocorrências: ${total}`, 15, y); y += 7;
-    doc.text(`Pendentes: ${pendente}`, 15, y); y += 7;
-    doc.text(`Em Andamento: ${andamento}`, 15, y); y += 7;
-    doc.text(`Concluídas: ${concluida}`, 15, y); y += 15;
-
-    // 2. Gráficos (Captura as imagens do Canvas)
+    doc.text(`Total de Ocorrências: ${total}`, 15, y); y += 15;
+    
     doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.text("2. Gráficos Analíticos", 15, y); y += 10;
-
-    // Função interna para adicionar gráfico
     const addChartToDoc = (chartId, title) => {
         const canvas = document.getElementById(chartId);
         if (canvas) {
-            // Verifica se precisa de nova página
             if (y > 220) { doc.addPage(); y = 20; }
-            
             const imgData = canvas.toDataURL("image/png");
             doc.setFontSize(11); doc.setFont("helvetica", "bold");
             doc.text(title, 105, y, null, null, "center");
-            
-            // Adiciona imagem centralizada
             doc.addImage(imgData, 'PNG', 40, y + 5, 130, 65);
-            y += 80; // Espaço ocupado
+            y += 80;
         }
     };
-
     if (chartInstances.type) addChartToDoc('chartType', 'Distribuição por Tipo');
     if (chartInstances.status) addChartToDoc('chartStatus', 'Status Operacional');
-    if (chartInstances.timeline) addChartToDoc('chartTimeline', 'Evolução Temporal');
-
     doc.save(`relatorio_geral_${new Date().toISOString().slice(0,10)}.pdf`);
     showCustomAlert("Relatório PDF gerado com sucesso!", "success");
 };
 
-// === NOVO: EXPORTAÇÃO GERAL MELHORADA (CSV) ===
 window.downloadCharts = () => {
     if (!allOccurrences.length) { showCustomAlert("Sem dados para exportar.", "error"); return; }
-    
-    // Adiciona aspas para evitar quebras se houver vírgulas no texto
     const rows = allOccurrences.map(o => 
         [
             o.id, 
-            o.tipo, 
+            formatarTipo(o.tipo),
             o.status, 
             `"${(o.data_envio || "")}"`,
-            `"${(o.endereco_completo || "").replace(/"/g, '""')}"`
+            `"${(o.endereco_completo || "").replace(/"/g, '""')}"`,
+            `"${o.atualizado_por || "-"}"`
         ].join(',')
     );
-    
-    // \uFEFF é o BOM para o Excel abrir UTF-8 corretamente
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + ["ID,Tipo,Status,Data,Endereço"].concat(rows).join('\n');
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + ["ID,Tipo,Status,Data,Endereço,Atualizado Por"].concat(rows).join('\n');
     const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", "relatorio_geral.csv");
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    
     showCustomAlert("Relatório CSV baixado com sucesso!", "success");
 };
 
-// --- AVISO TELEFONE ---
 async function checkUserPhone(uid) {
     try {
         const docRef = doc(db, "usuarios", uid);
@@ -724,43 +721,24 @@ async function checkUserPhone(uid) {
     } catch (e) { console.error(e); }
 }
 
-// 4. Detecção de INTELIGÊNCIA DE ENDEREÇO OFFLINE (ATUALIZADA COM CEP) ---
 async function enrichOfflineAddress(docId, lat, lng, elementId) {
     try {
-        console.log(`📡 Buscando endereço real para ID: ${docId}...`);
-        
-        // Busca na API Nominatim
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
         const data = await response.json();
-
         if (data && data.address) {
-            // Formata o endereço bonito
             const rua = data.address.road || data.address.pedestrian || "Rua não identificada";
             const bairro = data.address.suburb || data.address.neighbourhood || "";
             const cidade = data.address.city || data.address.town || "";
-            
-            // --- PEGAR O CEP (POSTCODE) ---
             const cep = data.address.postcode ? ` - CEP: ${data.address.postcode}` : "";
             const novoEndereco = `${rua}, ${bairro} - ${cidade}${cep} (Recuperado)`;
-
-            // Atualiza Visualmente na Tabela
+            
             const cell = document.getElementById(elementId);
             if (cell) {
                 cell.innerHTML = `<span style="color:#27ae60"><i class="fa-solid fa-check"></i></span> ${novoEndereco.substring(0, 25)}...`;
                 cell.title = novoEndereco; 
             }
-
-            // ATUALIZA NO FIREBASE
             const docRef = doc(db, "ocorrencias", docId);
-            await updateDoc(docRef, { 
-                endereco_completo: novoEndereco 
-            });
-            console.log("✅ Endereço corrigido (com CEP) e salvo no banco!");
-            
+            await updateDoc(docRef, { endereco_completo: novoEndereco });
         }
-    } catch (e) {
-        console.error("Erro ao enriquecer endereço:", e);
-        const cell = document.getElementById(elementId);
-        if (cell) cell.innerText = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-    }
+    } catch (e) { console.error(e); }
 }

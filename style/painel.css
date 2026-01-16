@@ -287,15 +287,15 @@
 .empty-trash { grid-column: 1 / -1; text-align: center; padding: 60px; color: #bbb; background: #f8f9fa; border-radius: 12px; border: 2px dashed #ddd; }
 
 /* ==========================================================================
-   EXPERIENCIA MOBILE (PAINEL E LIXEIRA) 
+   EXPERIENCIA MOBILE (PAINEL E LIXEIRA) - FINAL E CORRIGIDO
    Estas regras sobrescrevem o padrão quando a tela é menor que 768px
    ========================================================================== */
 @media (max-width: 768px) {
     
     /* 1. FILTROS DA TABELA E LIXEIRA */
     .filter-bar {
-        flex-direction: column !important; /* Empilha verticalmente */
-        align-items: stretch !important;   /* Estica para largura total */
+        flex-direction: column !important;
+        align-items: stretch !important;
         gap: 15px !important;
     }
     
@@ -305,67 +305,47 @@
         margin: 0 !important;
     }
     
-    /* 2. GRÁFICOS (Correção de Visualização Mobile) */
+    /* 2. GRÁFICOS (Correção: Um embaixo do outro) */
     .charts-container {
-        grid-template-columns: 1fr !important; /* Uma coluna só */
+        display: flex !important; /* Muda de Grid para Flex */
+        flex-direction: column !important; /* Um embaixo do outro */
+        gap: 20px !important;
         padding: 10px !important;
     }
     
     .chart-box {
         width: 100% !important;
-        margin-bottom: 20px; /* Mais espaço entre um e outro */
-        min-height: 350px !important; /* Força a caixa a ser alta para caber legenda */
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    
-    /* Permite que o desenho do gráfico cresça mais verticalmente */
-    .chart-box canvas {
-        max-height: 300px !important; 
-        width: 100% !important;
-        height: auto !important;
-    }
-    
-    .chart-full-width {
-        grid-column: 1 !important; /* Remove expansão lateral */
+        margin-bottom: 0 !important;
+        min-height: 300px !important; /* Altura garantida */
     }
 
     /* Botões do Gráfico: Lado a Lado */
     .chart-actions {
         display: flex !important;
-        flex-direction: row !important; /* Força linha */
-        flex-wrap: wrap; /* Segurança para telas minúsculas */
+        flex-direction: row !important;
+        flex-wrap: wrap;
         gap: 10px !important;
-        margin-top: 15px;
     }
     
     .chart-actions button {
-        width: auto !important; /* Remove largura fixa */
-        flex: 1; /* Faz cada botão ocupar metade do espaço (50%) */
-        margin-bottom: 0 !important;
-        padding: 12px 5px !important; /* Altura boa para o dedo */
-        font-size: 11px !important; /* Texto menor para caber */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        white-space: nowrap; /* Evita quebra de texto dentro do botão */
+        flex: 1;
+        font-size: 11px !important;
     }
 
     /* 3. TABELA (Scroll Horizontal) */
     .table-wrap {
         display: block !important;
         width: 100% !important;
-        overflow-x: auto !important; /* Habilita o scroll */
+        overflow-x: auto !important;
     }
     
     #occTable {
-        min-width: 600px !important; /* Força largura mínima para não espremer */
+        min-width: 600px !important; 
     }
 
     /* 4. MAPA */
     #occMap {
-        height: 350px !important; /* Mapa um pouco menor no celular */
+        height: 350px !important;
     }
     
     /* 5. HEADER DE DADOS */
@@ -380,13 +360,8 @@
         justify-content: space-between;
     }
 
-    /* 6. CORREÇÃO DA LIXEIRA */
+    /* 6. LIXEIRA */
     .trash-grid {
-        grid-template-columns: 1fr !important; /* Uma coluna fluida */
-    }
-    
-    /* Botões da lixeira mais altos para facilitar o toque */
-    .btn-trash-action {
-        padding: 12px !important;
+        grid-template-columns: 1fr !important;
     }
 }
